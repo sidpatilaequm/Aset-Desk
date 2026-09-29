@@ -1,0 +1,1832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Asset Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Archivo+Narrow:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F3F5F8; --surface:#FFFFFF; --sunk:#E9EDF2; --ink:#16213A; --muted:#5A6579; --line:#D9DFE7;
+  --accent:#1D5BD8; --accent-ink:#FFFFFF; --tag:#F5C518; --tag-ink:#1B1A12;
+  --ok:#1E8E5A; --warn:#A86A12; --bad:#C2413A; --info:#1D5BD8;
+  --ok-bg:#E3F4EB; --warn-bg:#FBF0DC; --bad-bg:#FBE6E4; --info-bg:#E4ECFB;
+  --radius:10px; --font:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --narrow:"Archivo Narrow","Arial Narrow",system-ui,sans-serif;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F141D; --surface:#171F2C; --sunk:#1E2838; --ink:#E6EAF2; --muted:#9AA5B8; --line:#2A3548;
+    --accent:#7EA4FF; --accent-ink:#0F141D; --ok:#5CCB93; --warn:#E8B35A; --bad:#F08A80; --info:#7EA4FF;
+    --ok-bg:#16322A; --warn-bg:#35291A; --bad-bg:#3A1F1E; --info-bg:#1B2A47; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F141D; --surface:#171F2C; --sunk:#1E2838; --ink:#E6EAF2; --muted:#9AA5B8; --line:#2A3548;
+  --accent:#7EA4FF; --accent-ink:#0F141D; --ok:#5CCB93; --warn:#E8B35A; --bad:#F08A80; --info:#7EA4FF;
+  --ok-bg:#16322A; --warn-bg:#35291A; --bad-bg:#3A1F1E; --info-bg:#1B2A47; color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font:15px/1.5 var(--font);font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+h1{font-size:1.6rem;line-height:1.2;margin:0 0 .25rem;font-weight:700;letter-spacing:-.01em}
+h2{font-size:1.1rem;margin:0 0 .75rem;font-weight:600}
+h3{font-size:.95rem;margin:0 0 .5rem;font-weight:600}
+p{margin:0 0 .75rem}
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+
+/* shell */
+.app{display:grid;grid-template-columns:232px 1fr;min-height:100vh}
+.side{background:var(--surface);border-right:1px solid var(--line);padding:1.25rem 1rem;display:flex;flex-direction:column;gap:1rem;position:sticky;top:0;height:100vh;overflow:auto}
+.brand{display:flex;align-items:center;gap:.6rem;font-weight:700;font-size:1.05rem}
+.brand .mark{width:30px;height:22px;background:var(--tag);border-radius:3px;display:grid;place-items:center;color:var(--tag-ink);font:700 .7rem var(--narrow)}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav a{display:flex;justify-content:space-between;align-items:center;padding:.5rem .7rem;border-radius:8px;text-decoration:none;color:var(--ink);font-weight:500}
+.nav a:hover{background:var(--sunk)}
+.nav a.on{background:var(--ink);color:var(--surface)}
+.nav .count{font-size:.75rem;background:var(--sunk);color:var(--ink);border-radius:20px;padding:0 .45rem}
+.nav a.on .count{background:var(--surface);color:var(--ink)}
+.whoami{margin-top:auto;border-top:1px solid var(--line);padding-top:1rem;font-size:.85rem}
+.whoami .name{font-weight:600}
+.main{padding:1.75rem 2rem 4rem;min-width:0;max-width:1180px}
+.pagehead{display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-end;justify-content:space-between;margin-bottom:1.25rem}
+@media (max-width:860px){
+  .app{grid-template-columns:1fr}
+  .side{position:sticky;top:0;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;padding:.6rem .8rem;z-index:5;border-right:0;border-bottom:1px solid var(--line);top:env(safe-area-inset-top,0px)}
+  .nav{flex-direction:row;overflow-x:auto;flex:1 1 100%;order:3}
+  .nav a{white-space:nowrap}
+  .whoami{margin:0 0 0 auto;border:0;padding:0;text-align:right}
+  .whoami .hide-sm{display:none}
+  .main{padding:1.25rem 1rem 4rem}
+}
+
+/* bits */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:1.1rem 1.2rem}
+.grid{display:grid;gap:1rem}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:860px){.g2,.g3{grid-template-columns:1fr}.g4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.btn{display:inline-flex;align-items:center;gap:.4rem;border:1px solid var(--line);background:var(--surface);padding:.5rem .9rem;border-radius:8px;cursor:pointer;font-weight:600;text-decoration:none;color:var(--ink);font-size:.9rem}
+.btn:hover{background:var(--sunk)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.danger{color:var(--bad)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.row{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}
+.spacer{flex:1}
+label.f{display:flex;flex-direction:column;gap:.3rem;font-size:.85rem;font-weight:500;color:var(--muted)}
+.f input,.f select,.f textarea,.inp{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:.5rem .6rem;color:var(--ink);font-size:.95rem;width:100%}
+.f textarea{min-height:90px;resize:vertical}
+.f input:disabled,.f select:disabled{opacity:.6}
+.check{display:flex;gap:.5rem;align-items:center;font-size:.9rem}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{text-align:left;padding:.6rem .75rem;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap}
+th{font-weight:600;color:var(--muted);font-size:.8rem;background:var(--sunk)}
+tr:last-child td{border-bottom:0}
+td.num,th.num{text-align:right}
+tbody tr.link{cursor:pointer}
+tbody tr.link:hover td{background:var(--sunk)}
+tfoot td{font-weight:700;background:var(--sunk)}
+.pill{display:inline-block;padding:.1rem .55rem;border-radius:20px;font-size:.78rem;font-weight:600;white-space:nowrap}
+.p-ok{background:var(--ok-bg);color:var(--ok)}.p-warn{background:var(--warn-bg);color:var(--warn)}
+.p-bad{background:var(--bad-bg);color:var(--bad)}.p-info{background:var(--info-bg);color:var(--info)}
+.p-mute{background:var(--sunk);color:var(--muted)}
+.notice{border-left:3px solid var(--accent);background:var(--info-bg);padding:.7rem .9rem;border-radius:6px;font-size:.9rem;margin-bottom:1rem}
+.notice.warn{border-color:var(--warn);background:var(--warn-bg)}
+.notice.bad{border-color:var(--bad);background:var(--bad-bg)}
+.empty{padding:2rem;text-align:center;color:var(--muted)}
+.kv{display:grid;grid-template-columns:max-content 1fr;gap:.35rem 1rem;font-size:.9rem}
+.kv dt{color:var(--muted)}.kv dd{margin:0;font-weight:500;min-width:0;overflow-wrap:anywhere}
+.figs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;margin-bottom:1rem}
+.figs>div{padding:.9rem 1.1rem;background:var(--surface);min-width:0}
+.figs.f3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.figs.f6{grid-template-columns:repeat(6,minmax(0,1fr))}
+.figs b{display:block;font-size:1.35rem;font-weight:700;letter-spacing:-.01em;overflow-wrap:anywhere}
+.figs span{font-size:.82rem;color:var(--muted)}
+@media (max-width:860px){.figs{grid-template-columns:repeat(2,minmax(0,1fr))}.figs.f6{grid-template-columns:repeat(3,minmax(0,1fr))}.figs.f3 b{font-size:1.05rem}}
+.bar{height:8px;background:var(--sunk);border-radius:4px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent)}
+.tabs{display:flex;gap:.25rem;border-bottom:1px solid var(--line);margin-bottom:1rem;overflow-x:auto}
+.tabs button{border:0;background:none;padding:.55rem .85rem;cursor:pointer;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap}
+.tabs button.on{color:var(--ink);border-color:var(--ink)}
+
+/* the asset tag: printed property label */
+.atag{display:inline-flex;align-items:stretch;background:var(--tag);color:var(--tag-ink);border-radius:3px;font:700 .82rem/1 var(--narrow);letter-spacing:.02em;overflow:hidden;vertical-align:middle;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+.atag span{padding:.28rem .45rem}
+.atag svg{background:#fff;display:block;padding:2px 4px;height:auto}
+.atag.big{font-size:1.15rem}
+.atag.big span{padding:.5rem .7rem}
+
+/* timeline */
+.tl{list-style:none;margin:0;padding:0}
+.tl li{position:relative;padding:0 0 1rem 1.3rem;border-left:2px solid var(--line);margin-left:.4rem}
+.tl li:last-child{border-color:transparent}
+.tl li::before{content:"";position:absolute;left:-6px;top:.3rem;width:10px;height:10px;border-radius:50%;background:var(--surface);border:2px solid var(--muted)}
+.tl li.ev-status::before{border-color:var(--accent);background:var(--accent)}
+.tl li.ev-resolve::before{border-color:var(--ok);background:var(--ok)}
+.tl .when{font-size:.78rem;color:var(--muted)}
+.tl .body{white-space:pre-wrap;overflow-wrap:anywhere}
+.steps{display:flex;gap:0;margin:.25rem 0 1rem;overflow-x:auto}
+.steps span{flex:1;min-width:90px;text-align:center;font-size:.78rem;padding:.35rem .3rem;border-bottom:3px solid var(--line);color:var(--muted);font-weight:600}
+.steps span.done{border-color:var(--accent);color:var(--ink)}
+.steps span.now{border-color:var(--ink);color:var(--ink)}
+
+/* sign in */
+.signin{min-height:100vh;display:grid;place-items:center;padding:1.5rem}
+.signin .card{width:min(440px,100%);background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:2rem}
+.sso{display:flex;align-items:center;gap:.75rem;width:100%;padding:.75rem 1rem;border:1px solid var(--line);border-radius:10px;background:var(--surface);cursor:pointer;font-weight:600;margin-bottom:.6rem;text-align:left}
+a.sso{text-decoration:none;color:var(--ink)}
+.sso:hover{background:var(--sunk)}
+.sso small{display:block;font-weight:400;color:var(--muted);font-size:.8rem}
+.drop{border:2px dashed var(--line);border-radius:var(--radius);padding:2rem;text-align:center;cursor:pointer;background:var(--surface)}
+.drop.over{border-color:var(--accent);background:var(--info-bg)}
+.toast{position:fixed;left:50%;bottom:calc(1.25rem + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:.6rem 1rem;border-radius:8px;font-size:.9rem;z-index:50;max-width:90vw}
+.toast.bad{background:var(--bad);color:#fff}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);padding:1.4rem;width:min(560px,94vw)}
+dialog::backdrop{background:rgba(10,15,25,.45)}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .8s linear infinite;vertical-align:-2px}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation-duration:3s}}
+.chart svg{width:100%;height:auto;display:block}
+.tgrid{grid-template-columns:minmax(0,2fr) minmax(0,1fr)}@media (max-width:860px){.tgrid{grid-template-columns:1fr}}
+/* support desk */
+.main.wide{max-width:none;padding:1rem}
+.desk{display:grid;grid-template-columns:320px minmax(0,1fr) 290px;height:calc(100dvh - 2rem);min-height:520px;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:var(--surface)}
+.desk.no-side{grid-template-columns:320px minmax(0,1fr)}
+.dpane{min-width:0;min-height:0;display:flex;flex-direction:column}
+.dlist{border-right:1px solid var(--line)}
+.dside{border-left:1px solid var(--line);overflow:auto;padding:1rem;gap:1.25rem;background:var(--bg)}
+.lhead{padding:1rem;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:.65rem}
+.litems{overflow:auto;flex:1}
+.titem{display:block;padding:.75rem 1rem;border-bottom:1px solid var(--line);text-decoration:none;color:var(--ink)}
+.titem:hover{background:var(--sunk)}
+.titem.on{background:var(--info-bg);box-shadow:inset 3px 0 0 var(--accent)}
+.titem.unread b::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent);margin-right:.4rem;vertical-align:middle}
+.ell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;min-width:0}
+.chips{display:flex;flex-wrap:wrap;gap:.35rem}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:20px;padding:.3rem .7rem;font-size:.82rem;font-weight:600;cursor:pointer;color:var(--ink)}
+.chip:hover{border-color:var(--ink)}
+.chip.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.thead{display:flex;gap:.75rem;align-items:center;padding:.8rem 1rem;border-bottom:1px solid var(--line)}
+.back{display:none;text-decoration:none;font-size:1.3rem;color:var(--ink)}
+.tbody{flex:1;overflow:auto;padding:1rem 1.25rem;display:flex;flex-direction:column;gap:.75rem;background:var(--bg)}
+.msg{max-width:min(78%,640px);padding:.6rem .85rem;border-radius:14px;background:var(--surface);border:1px solid var(--line)}
+.msg.me{align-self:flex-end;background:var(--accent);color:var(--accent-ink);border-color:var(--accent);border-bottom-right-radius:4px}
+.msg.me a{color:inherit}
+.msg.them,.msg.bot{align-self:flex-start;border-bottom-left-radius:4px}
+.msg.note{align-self:stretch;max-width:none;background:var(--warn-bg);border:1px dashed var(--warn)}
+.msg .who{font-size:.75rem;font-weight:600;opacity:.85;margin-bottom:.15rem}
+.msg .body{white-space:pre-wrap;overflow-wrap:anywhere}
+.msg.bot .body{white-space:normal}
+.msg .when{font-size:.7rem;opacity:.75;margin-top:.25rem;text-align:right}
+.msg img{max-width:100%;max-height:260px;border-radius:8px;margin-top:.4rem;display:block}
+.msg.me .assetsel{background:var(--surface);color:var(--ink);border-color:transparent;font-weight:600;max-width:100%}
+.msg.me .assetsel:disabled{opacity:1}
+.linkbtn{background:none;border:0;padding:0;color:inherit;text-decoration:underline;cursor:pointer;font-size:.72rem}
+.badge{font-size:.66rem;background:var(--ink);color:var(--surface);border-radius:4px;padding:.05rem .3rem;font-weight:600;vertical-align:1px}
+.sys{align-self:center;font-size:.75rem;color:var(--muted);text-align:center;max-width:90%}
+.composer{border-top:1px solid var(--line);padding:.75rem 1rem;background:var(--surface);display:flex;flex-direction:column;gap:.5rem}
+.composer textarea{width:100%;min-height:76px;max-height:240px;resize:vertical;border:1px solid var(--line);border-radius:8px;padding:.55rem .65rem;background:var(--bg);color:var(--ink)}
+.composer.internal textarea{background:var(--warn-bg);border-color:var(--warn)}
+.banner{padding:.75rem 1rem;background:var(--ok-bg);border-top:1px solid var(--line)}
+.acards{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:.6rem}
+.acard{border:1px solid var(--line);border-radius:10px;padding:.75rem;background:var(--surface);text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:.35rem;align-items:flex-start;color:var(--ink)}
+button.acard:hover{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.sidesec h3{font-size:.8rem;color:var(--muted);margin:0 0 .4rem;font-weight:600}
+.emptypane{margin:auto;text-align:center;color:var(--muted);padding:2rem;max-width:420px}
+.pp{position:relative}
+.pp-list{position:absolute;z-index:20;left:0;right:0;top:100%;margin-top:4px;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 10px 28px rgba(0,0,0,.14);max-height:260px;overflow:auto}
+.pp-list button{display:block;width:100%;text-align:left;padding:.5rem .7rem;border:0;background:none;cursor:pointer;color:var(--ink)}
+.pp-list button:hover{background:var(--sunk)}
+dialog{overflow:visible}
+@media (max-width:1100px){
+  .desk,.desk.no-side{grid-template-columns:280px minmax(0,1fr);grid-template-rows:minmax(520px,calc(100dvh - 2rem)) auto;height:auto}
+  .dside{grid-column:1/-1;border-left:0;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+}
+@media (max-width:860px){
+  .main.wide{padding:.5rem}
+  .desk,.desk.no-side{grid-template-columns:1fr;grid-template-rows:minmax(460px,calc(100dvh - 9rem)) auto}
+  .desk.has-thread .dlist{display:none}
+  .desk:not(.has-thread) .dthread{display:none}
+  .back{display:inline}
+  .msg{max-width:88%}
+}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+<div id="root"><div class="signin"><p class="muted"><span class="spin"></span> Loading Asset Desk…</p></div></div>
+<div id="toast" class="toast" hidden></div>
+<dialog id="dlg"></dialog>
+
+<script>
+"use strict";
+/* ============ constants ============ */
+const ROLES = ["Admin","IT Manager","IT Asset Manager","Finance","IT Support","Employee"];
+const PERMS = {
+  "Admin":["assets.viewAll","assets.create","assets.edit","assets.import","assets.delete","depr.edit","report.view","tickets.viewAll","tickets.manage","tickets.raise","people.manage","settings.manage","exits.viewAll","sales.view","payroll.view"],
+  "IT Manager":["assets.viewAll","report.view","tickets.viewAll","tickets.raise","exits.viewAll","exits.itApprove"],
+  "IT Asset Manager":["assets.viewAll","assets.create","assets.edit","assets.assign","assets.import","report.view","tickets.viewAll","tickets.raise","exits.viewAll","returns.receive","sales.create"],
+  "Finance":["assets.viewAll","depr.edit","report.view","tickets.raise","exits.viewAll","exits.financeApprove","sales.create","sales.approve","payroll.view"],
+  "IT Support":["assets.viewAll","tickets.viewAll","tickets.manage","tickets.raise"],
+  "Employee":["tickets.raise"]
+};
+const ROLE_NOTE = {
+  "Admin":"Manages people, roles and settings, and can see every asset, request and exit clearance.",
+  "IT Manager":"Signs off exit clearances after all assets are handed back.",
+  "IT Asset Manager":"Adds assets, allocates them to employees, receives them back and proposes sales to employees.",
+  "Finance":"Sets depreciation, approves asset sales to employees, runs the salary-deduction payroll input and gives the final exit sign-off.",
+  "IT Support":"Answers support requests in the inbox and solves them.",
+  "Employee":"Sees the assets allocated to them, gets IT help, and returns assets or submits an exit clearance."
+};
+const normRole = r => r==="Asset Manager" ? "IT Asset Manager" : r;
+const CATEGORIES = {
+  "Laptop":{life:3,wdv:40},"Desktop":{life:3,wdv:40},"Monitor":{life:5,wdv:40},"Mobile phone":{life:2,wdv:40},
+  "Server":{life:6,wdv:40},"Network equipment":{life:5,wdv:40},"Printer / scanner":{life:5,wdv:15},
+  "Office equipment":{life:5,wdv:15},"Furniture":{life:10,wdv:10},"Vehicle":{life:8,wdv:15},
+  "Software license":{life:3,wdv:25},"Other":{life:5,wdv:15}
+};
+const METHODS = {SL:"Straight line",WDV:"Written-down value",DDB:"Double declining balance",SYD:"Sum of years' digits"};
+const ASSET_STATUS = ["In stock","In use","Under repair","Retired","Disposed","Sold"];
+const T_STATUS = ["New","Open","Pending","On-hold","Solved","Closed"];
+const T_CATS = ["Hardware fault","Software issue","Physical damage","Lost or stolen","Replacement request","Access / setup","Other"];
+const PRIORITY = {Critical:4,High:24,Medium:72,Low:168};
+const PROVIDERS = {
+  microsoft:{name:"Microsoft Entra ID",short:"Microsoft",logo:'<svg width="20" height="20" viewBox="0 0 21 21" aria-hidden="true"><rect width="10" height="10" fill="#F25022"/><rect x="11" width="10" height="10" fill="#7FBA00"/><rect y="11" width="10" height="10" fill="#00A4EF"/><rect x="11" y="11" width="10" height="10" fill="#FFB900"/></svg>'},
+  google:{name:"Google Workspace",short:"Google",logo:'<svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>'}
+};
+const DEFAULT_CONFIG = {
+  microsoft:{enabled:true,domain:"",tenantId:"",defaultRole:"Employee"},
+  google:{enabled:true,domain:"",defaultRole:"Employee"},
+  currency:"INR", fyStartMonth:4, defaultMethod:"SL"
+};
+
+/* ============ helpers ============ */
+const $ = (s,el=document)=>el.querySelector(s);
+const $$ = (s,el=document)=>[...el.querySelectorAll(s)];
+const esc = v => String(v ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const num = v => { const n = parseFloat(v); return isFinite(n) ? n : 0; };
+const todayISO = () => new Date().toISOString().slice(0,10);
+const fmtDate = d => d ? new Date(d).toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"}) : "—";
+const fmtDT = d => d ? (String(d).length===10 ? fmtDate(d) : new Date(d).toLocaleString(undefined,{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"})) : "—";
+function money(v, cur){
+  cur = cur || S.config.currency || "INR";
+  try{ return new Intl.NumberFormat(cur==="INR"?"en-IN":undefined,{style:"currency",currency:cur,maximumFractionDigits:0}).format(v||0); }
+  catch{ return (cur+" "+Math.round(v||0).toLocaleString()); }
+}
+function toast(msg, bad){
+  const t = $("#toast"); t.textContent = msg; t.className = "toast"+(bad?" bad":""); t.hidden = false;
+  clearTimeout(toast._t); toast._t = setTimeout(()=>t.hidden=true, 3200);
+}
+function ago(d){
+  const s = (Date.now()-new Date(d))/1000;
+  if (s<60) return "just now"; if (s<3600) return Math.floor(s/60)+" min ago";
+  if (s<86400) return Math.floor(s/3600)+" h ago"; return Math.floor(s/86400)+" d ago";
+}
+function barcode(text, h=18){
+  // decorative Code-39-ish bars derived from the tag text
+  let x=0, rects="";
+  const bits = [..."*"+text+"*"].flatMap(ch=>{ const c=ch.charCodeAt(0); return [1,(c>>1&1)+1,1,(c>>3&1)+1,(c&1)+1,(c>>2&1)+1,1,0]; });
+  bits.forEach((w,i)=>{ if(i%2===0 && w) rects+=`<rect x="${x}" y="0" width="${w}" height="${h}"/>`; x+= w||1; });
+  return `<svg viewBox="0 0 ${x} ${h}" width="${Math.min(x*0.9,120)}" height="${h}" fill="#111" aria-hidden="true">${rects}</svg>`;
+}
+const tagHTML = (tag, big) => `<span class="atag${big?" big":""}"><span>${esc(tag)}</span>${barcode(tag, big?26:16)}</span>`;
+
+/* ============ server API (Python/FastAPI + MySQL) ============ */
+const P = { mode:"server", assets:true };
+class ApiError extends Error { constructor(status, message){ super(message); this.status = status; this.code = status; } }
+async function api(method, path, body, isForm, signal){
+  const opt = { method, credentials:"same-origin", headers:{"X-Requested-With":"AssetDesk"}, signal };
+  if (body !== undefined){
+    if (isForm) opt.body = body;
+    else { opt.headers["Content-Type"] = "application/json"; opt.body = JSON.stringify(body); }
+  }
+  let r;
+  try{ r = await fetch(path, opt); }
+  catch(e){ if (e.name==="AbortError") throw e; throw new ApiError(0, "Can't reach the server. Check your connection."); }
+  const ct = r.headers.get("content-type")||"";
+  const data = ct.includes("json") ? await r.json().catch(()=>null) : await r.text();
+  if (r.status===401 && !path.startsWith("/api/state")){ S.session = null; showSignIn(); }
+  if (!r.ok){
+    const d = data && data.detail;
+    const msg = typeof d==="string" ? d : Array.isArray(d) ? d.map(x=>x.msg).join("; ") : `Request failed (${r.status}).`;
+    throw new ApiError(r.status, msg);
+  }
+  return data;
+}
+const profileCache = {};
+function nameOf(id){
+  if (!id) return "Unassigned";
+  if (id === S.me?.id) return (S.me.name || "You") + " (you)";
+  const p = profileCache[id];
+  return p ? (p.name || p.email || "Someone") : "Someone";
+}
+const plainName = id => nameOf(id).replace(/ \(you\)$/,"");
+function requestProfiles(){ /* names arrive with /api/state */ }
+const fileUrl = id => "/files/" + encodeURIComponent(id);
+function downloadFile(name, content, type){
+  const url = URL.createObjectURL(new Blob([content], {type}));
+  const a = document.createElement("a"); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 2000);
+}
+function downloadUrl(url){ const a = document.createElement("a"); a.href = url; a.download = ""; document.body.appendChild(a); a.click(); a.remove(); }
+let lastState = "";
+function applyState(st, forceRender){
+  S.me = {id:st.me.id, name:st.me.name, email:st.me.email, provider:st.me.provider};
+  S.role = st.me.role; S.perms = new Set(st.me.perms); S.isOwner = st.me.isOwner; S.features = st.features || {};
+  S.config = {...structuredClone(DEFAULT_CONFIG), ...st.config, microsoft:{...DEFAULT_CONFIG.microsoft, ...st.config.microsoft}, google:{...DEFAULT_CONFIG.google, ...st.config.google}};
+  S.people = st.people; S.peopleById = Object.fromEntries(st.people.map(p=>[p.id,p]));
+  st.people.forEach(p=>{ profileCache[p.id] = {name:p.name, email:p.email}; });
+  S.members = Object.fromEntries(st.people.filter(p=>p.signedIn).map(p=>[p.id,{provider:p.provider, signedInAt:p.signedInAt}]));
+  S.roles = Object.fromEntries(st.people.filter(p=>p.explicitRole).map(p=>[p.id,{role:p.role}]));
+  S.assets = st.assets; S.tickets = st.tickets.map(normTicket); S.returns = st.returns; S.sales = st.sales;
+  S.loaded = {assets:true, tickets:true, returns:true, sales:true};
+  S.session = st.me.provider || "dev";
+  // don't redraw under someone who is filling in a form, unless they just saved it
+  const busy = !forceRender && document.querySelector("#assetForm,#exitForm,#retForm,#saleForm,#setForm,#lines,dialog[open]");
+  if (!busy) render();
+}
+async function refresh(force){
+  const st = await api("GET", "/api/state");
+  const js = JSON.stringify(st);
+  if (!force && js === lastState) return;
+  lastState = js; applyState(st, force);
+}
+/** Run a server action, show a message, reload data. Returns the result, or false on failure. */
+async function act(promise, okMsg){
+  try{ const res = await promise; if (okMsg) toast(okMsg); await refresh(true); return res ?? true; }
+  catch(e){ if (e.name!=="AbortError") toast(e.message || "Something went wrong.", true); return false; }
+}
+const safe = act;
+async function uploadFile(file){ const fd = new FormData(); fd.append("file", file); return api("POST", "/api/files", fd, true); }
+
+/* ============ state ============ */
+const S = {
+  me:null, isOwner:false, assets:[], tickets:[], roles:{}, members:{}, config:structuredClone(DEFAULT_CONFIG),
+  loaded:{assets:false,tickets:false,returns:false,sales:false}, viewAs:null, session:null, route:["dashboard"],
+  ocr:{status:"idle", file:null, result:null, error:"", blobId:null},
+  canUploadImages:false,
+  filters:{assetQ:"",assetCat:"",assetStatus:"",inboxView:"unassigned",inboxQ:"",reqView:"open",allocQ:""},
+  reportFY:null, people:[], peopleById:{}, perms:new Set(), features:{}, role:"Employee", returns:[], sales:[], exitDraft:null, saleDraft:null, retDraft:null, msgs:{}, msgSub:null, drafts:{}, replyMode:{}, att:{}, nr:null, suggest:null, scrollToEnd:false, pick:{}
+};
+function realRole(){ return S.role || "Employee"; }
+const role = () => realRole();
+const can = p => !!S.perms && S.perms.has(p);
+function roleOf(uid){ return S.peopleById?.[uid]?.role || "Employee"; }
+/* ============ depreciation engine ============ */
+function yearlyDep(a){
+  const cost = num(a.cost), salv = Math.min(num(a.salvage), cost), life = Math.max(1, Math.round(num(a.life)||1));
+  const base = cost - salv, out = []; let open = cost;
+  const m = a.method || "SL";
+  if (m === "SL"){ for (let i=0;i<life;i++) out.push(base/life); }
+  else if (m === "SYD"){ const s = life*(life+1)/2; for (let i=0;i<life;i++) out.push(base*(life-i)/s); }
+  else if (m === "WDV"){
+    let r = num(a.rate)/100;
+    if (!r) r = 1 - Math.pow(Math.max(salv, cost*0.05)/Math.max(cost,1), 1/life);
+    for (let i=0;i<life;i++){ let d = (i===life-1) ? open-salv : open*r; d = Math.max(0, Math.min(d, open-salv)); out.push(d); open -= d; }
+  } else { // DDB with switch to straight line
+    const r = 2/life;
+    for (let i=0;i<life;i++){ const sl=(open-salv)/(life-i); let d=Math.max(open*r, sl); d=Math.max(0,Math.min(d,open-salv)); out.push(d); open-=d; }
+  }
+  return out;
+}
+function startOf(a){ const d = new Date(a.inServiceDate || a.purchaseDate || todayISO()); return isNaN(d) ? new Date() : d; }
+function monthsBetween(a,b){ return (b.getFullYear()-a.getFullYear())*12 + (b.getMonth()-a.getMonth()) + (b.getDate()-a.getDate())/30.44; }
+function accumAt(a, date){
+  const ys = yearlyDep(a), total = ys.length*12;
+  let m = Math.max(0, Math.min(total, monthsBetween(startOf(a), date)));
+  if (["Disposed","Sold","Retired"].includes(a.status) && a.disposedAt) m = Math.min(m, Math.max(0, monthsBetween(startOf(a), new Date(a.disposedAt))));
+  let acc = 0, i = 0;
+  while (m > 0 && i < ys.length){ const take = Math.min(12, m); acc += ys[i]*take/12; m -= take; i++; }
+  return acc;
+}
+const bookValue = (a, date=new Date()) => num(a.cost) - accumAt(a, date);
+function schedule(a){
+  const ys = yearlyDep(a), s = startOf(a); let open = num(a.cost), acc = 0;
+  return ys.map((d,i)=>{
+    const from = new Date(s); from.setFullYear(s.getFullYear()+i);
+    const to = new Date(from); to.setFullYear(from.getFullYear()+1); to.setDate(to.getDate()-1);
+    acc += d; const row = {year:i+1, from, to, open, dep:d, acc, close:open-d}; open -= d; return row;
+  });
+}
+function fyRange(startYear){
+  const m = (S.config.fyStartMonth||4)-1;
+  return {start:new Date(startYear, m, 1), end:new Date(startYear+1, m, 1)};
+}
+function fyLabel(y){ const m=(S.config.fyStartMonth||4); return m===1 ? `${y}` : `FY ${y}–${String(y+1).slice(2)}`; }
+function currentFYStart(){ const now=new Date(), m=(S.config.fyStartMonth||4)-1; return now.getMonth()>=m ? now.getFullYear() : now.getFullYear()-1; }
+
+/* ============ derived ============ */
+function visibleAssets(){
+  if (can("assets.viewAll")) return S.assets;
+  return S.assets.filter(a=>a.assignedTo===S.me?.id);
+}
+function visibleTickets(){
+  if (can("tickets.viewAll")) return S.tickets;
+  return S.tickets.filter(t=>t.requesterId===S.me?.id || t.assigneeId===S.me?.id);
+}
+const isActive = t => !["Solved","Closed"].includes(t.status);
+const isOverdue = t => isActive(t) && t.status!=="Pending" && t.dueAt && new Date(t.dueAt) < new Date();
+function nextId(prefix, list){
+  const max = list.reduce((m,x)=>{ const n = parseInt(String(x.id).split("-")[1],10); return isFinite(n)&&n>m?n:m; },0);
+  return prefix+"-"+String(max+1).padStart(5,"0");
+}
+function statusPill(s){
+  const map = {"In use":"p-ok","In stock":"p-info","Under repair":"p-warn","Retired":"p-mute","Disposed":"p-mute","Sold":"p-mute",
+    "New":"p-warn","Open":"p-bad","Pending":"p-info","On-hold":"p-mute","Solved":"p-ok","Closed":"p-mute"};
+  return `<span class="pill ${map[s]||"p-mute"}">${esc(s)}</span>`;
+}
+const priPill = p => `<span class="pill ${p==="Critical"?"p-bad":p==="High"?"p-warn":"p-mute"}">${esc(p)}</span>`;
+function normTicket(t){
+  const legacy = {"Assigned":"Open","In progress":"Open","On hold":"On-hold","Resolved":"Solved"};
+  let st = legacy[t.status] || t.status || "New";
+  if (t.title && !t.subject && st==="Open" && !t.assigneeId) st = "New";
+  return {...t, subject:t.subject||t.title||"(no subject)", requesterId:t.requesterId||t.raisedBy,
+    status: T_STATUS.includes(st)?st:"Open", lastMessageAt:t.lastMessageAt||t.updatedAt||t.createdAt,
+    lastPublicAt:t.lastPublicAt||t.createdAt, solvedAt:t.solvedAt||t.resolvedAt||null};
+}
+const Seen = {
+  m:(()=>{ try{ return JSON.parse(localStorage.getItem("assetdesk-seen"))||{}; }catch{ return {}; } })(),
+  mark(id, at){ if (!at || (this.m[id]||"") >= at) return; this.m[id] = at; try{ localStorage.setItem("assetdesk-seen", JSON.stringify(this.m)); }catch{} }
+};
+const agentView = t => can("tickets.manage") && t.requesterId !== S.me.id;
+function isUnread(t){
+  const at = agentView(t) ? t.lastMessageAt : t.lastPublicAt;
+  return !!at && !!t.lastMessageBy && t.lastMessageBy !== S.me.id && (Seen.m[t.id]||"") < at;
+}
+function agentIds(){
+  const ids = new Set([...Object.keys(S.members), S.me.id]);
+  return [...ids].filter(u=>["IT Support","Admin"].includes(roleOf(u)));
+}
+function threadItems(t){
+  const ms = (S.msgs[t.id]||[]).slice();
+  if (t.events){ // tickets raised before the chat existed
+    if (t.description) ms.push({at:t.createdAt, by:t.requesterId, body:t.description, kind:"public"});
+    t.events.forEach(e=>ms.push({at:e.at, by:e.by, body:e.text, kind:e.type==="comment"?"public":"system"}));
+  }
+  return ms.sort((a,b)=>String(a.at).localeCompare(String(b.at)));
+}
+
+/* ============ routing ============ */
+function parseRoute(){ const h = location.hash.replace(/^#\/?/,""); S.route = h ? h.split("/").map(decodeURIComponent) : ["dashboard"]; }
+window.addEventListener("hashchange", ()=>{
+  const prev = S.route.join("/"); parseRoute();
+  if (S.route[0]!=="support" || S.route[1]!=="new" || prev!==S.route.join("/")) S.nr = null;
+  if (S.route[0]!=="support" && S.suggest){ S.suggest.abort(); }
+  if (S.route[0]==="sales" && S.route[1]==="new" && S.route[2] && S.saleDraft?.assetId!==S.route[2]) S.saleDraft = null;
+  render(); if (S.route[0]!=="support") window.scrollTo(0,0);
+});
+const go = r => { location.hash = "#/"+r; };
+
+/* ============ render ============ */
+function render(){
+  const root = $("#root");
+  if (!S.me) return;
+  if (!S.session){ showSignIn(); return; }
+  syncMsgWatch();
+  const ae = document.activeElement;
+  const keep = ae && ae.id && root.contains(ae) ? {id:ae.id, s:ae.selectionStart, e:ae.selectionEnd} : null;
+  const th = $("#thread"), atBottom = !th || th.scrollHeight-th.scrollTop-th.clientHeight < 80, prevTop = th?.scrollTop, prevThread = th?.dataset.t;
+  const listEl = $(".litems"), listTop = listEl?.scrollTop;
+  const r = S.route[0], agent = can("tickets.manage"), vt = visibleTickets();
+  const supportCount = agent
+    ? vt.filter(t=>t.status==="New").length + vt.filter(t=>t.assigneeId===S.me.id && isActive(t) && isUnread(t)).length
+    : vt.filter(t=>t.requesterId===S.me.id && isUnread(t)).length;
+  const nav = [
+    ["dashboard","Overview"],
+    ["assets", can("assets.viewAll")?"Assets":"My assets", visibleAssets().length],
+    can("assets.assign") && ["allocations","Allocations"],
+    ["exits", can("exits.viewAll")?"Returns & exits":"Returns & leaving", (can("exits.viewAll") ? S.returns.filter(waitingOnMe).length : S.returns.filter(x=>x.employeeId===S.me.id&&isOpenR(x)).length) || null],
+    ["support", agent?"Support inbox":"Help & support", supportCount||null],
+    can("assets.viewAll") && ["history","Asset history"],
+    (salesStaff() || S.sales.some(x=>x.employeeId===S.me.id)) && ["sales", salesStaff()?"Sales to employees":"My purchases", S.sales.filter(saleWaitingOnMe).length || null],
+    can("report.view") && ["report","Depreciation"],
+    can("people.manage") && ["people","People & roles"],
+    can("settings.manage") && ["settings","Sign-in & settings"]
+  ].filter(Boolean);
+  const activeKey = {asset:"assets",new:"assets",edit:"assets",import:"assets"}[r] || r;
+  const prov = PROVIDERS[S.me.provider] || {short:"Developer login"};
+  root.innerHTML = `<div class="app">
+    <aside class="side">
+      <div class="brand"><span class="mark">AD</span>Asset Desk</div>
+      <nav class="nav" aria-label="Main">${nav.map(([k,l,c])=>`<a href="#/${k}" class="${activeKey===k?"on":""}">${esc(l)}${c!=null?`<span class="count">${c}</span>`:""}</a>`).join("")}</nav>
+      <div class="whoami">
+        <div class="name">${esc(S.me.name||"Signed in")}</div>
+        <div class="muted hide-sm">${esc(role())}${S.viewAs?" (preview)":""} · ${esc(prov?.short||"")}</div>
+        <button class="btn" id="signOut" style="margin-top:.6rem;padding:.3rem .7rem;font-size:.8rem">Sign out</button>
+      </div>
+    </aside>
+    <main class="main${r==="support"?" wide":""}" id="main">${viewFor(r)}</main>
+  </div>`;
+  $("#signOut").onclick = async ()=>{ try{ await api("POST","/auth/logout"); }catch{} S.session=null; lastState=""; showSignIn(); };
+  bindView(r);
+  if (keep){ const n = document.getElementById(keep.id); if (n){ n.focus({preventScroll:true}); try{ if(keep.s!=null) n.setSelectionRange(keep.s, keep.e); }catch{} } }
+  const nt = $("#thread");
+  if (nt){ if (S.scrollToEnd || atBottom || prevThread!==nt.dataset.t) nt.scrollTop = nt.scrollHeight; else nt.scrollTop = prevTop; S.scrollToEnd = false; }
+  const nl = $(".litems"); if (nl && listTop) nl.scrollTop = listTop;
+}
+function viewFor(r){
+  const pre = P.mode==="local" && r==="dashboard" ? localBanner() : "";
+  switch(r){
+    case "dashboard": return pre+dashboardView();
+    case "assets": return assetsView();
+    case "asset": return assetDetailView(S.route[1]);
+    case "new": return can("assets.create") ? assetFormView(null) : denied();
+    case "edit": return assetFormView(S.assets.find(a=>a.id===S.route[1]));
+    case "import": return can("assets.import") ? importView() : denied();
+    case "allocations": return can("assets.assign") ? allocationsView() : denied();
+    case "support": return supportView();
+    case "exits": return exitsView();
+    case "history": return can("assets.viewAll") ? historyView() : denied();
+    case "sales": return salesView();
+    case "tickets": case "ticket": setTimeout(()=>location.replace("#/support"+(S.route[1]?"/"+S.route[1]:""))); return "";
+    case "report": return can("report.view") ? reportView() : denied();
+    case "people": return can("people.manage") ? peopleView() : denied();
+    case "settings": return can("settings.manage") ? settingsView() : denied();
+    default: return `<div class="empty">That page doesn't exist. <a href="#/dashboard">Go to overview</a></div>`;
+  }
+}
+const denied = () => `<div class="notice warn">Your role (${esc(role())}) can't open this page. Ask an Admin to change your role.</div>`;
+const localBanner = () => `<div class="notice warn">Running without shared storage: data is saved in this browser only. Open the page inside Claude to share it with your team.</div>`;
+function bindView(r){
+  const fn = {dashboard:bindDashboard, assets:bindAssets, asset:bindAssetDetail, new:bindAssetForm, edit:bindAssetForm,
+    import:bindImport, allocations:bindAllocations, exits:bindExits, history:bindHistory, sales:bindSales, support:bindSupport, report:bindReport, people:bindPeople, settings:bindSettings}[r];
+  if (fn) fn();
+}
+
+/* ---------- sign in ---------- */
+function signInView(){
+  const pc = S.publicConfig || {providers:[], devLogin:false, domains:{}};
+  const err = new URLSearchParams(location.search).get("signin_error");
+  const errText = {wrong_domain:"That account isn't in your company's directory. Use your work account.", unverified_email:"Your Google account's email address isn't verified.",
+    no_email:"Your account didn't share an email address.", access_denied:"Sign-in was cancelled."}[err] || (err ? "Sign-in didn't complete. Try again." : "");
+  return `<div class="signin"><div class="card">
+    <div class="brand" style="margin-bottom:1.25rem"><span class="mark">AD</span>Asset Desk</div>
+    <h1>Sign in</h1>
+    <p class="muted">Use your company directory account. Your role decides what you can see and do.</p>
+    ${errText?`<div class="notice bad">${esc(errText)}</div>`:""}
+    ${pc.providers.map(k=>`<a class="sso" href="/auth/login/${k}">${PROVIDERS[k].logo}<span>Continue with ${esc(PROVIDERS[k].name)}<small>${pc.domains?.[k]?esc("@"+pc.domains[k]+" accounts"):k==="microsoft"?"Azure AD / Entra ID organisation account":"Google Workspace organisation account"}</small></span></a>`).join("")}
+    ${!pc.providers.length && !pc.devLogin?`<div class="notice warn">No sign-in providers are set up yet. Add the Microsoft or Google settings to the server's .env file.</div>`:""}
+    ${pc.devLogin?`<form method="post" action="/auth/dev" class="grid" style="margin-top:1rem;border-top:1px solid var(--line);padding-top:1rem">
+      <p class="small muted" style="margin:0">Developer sign-in is on (DEV_LOGIN=true). Turn it off in production.</p>
+      <label class="f">Work email<input name="email" type="email" required autocomplete="email"></label>
+      <label class="f">Name<input name="name" autocomplete="name"></label>
+      <button class="btn" type="submit">Sign in</button></form>`:""}
+  </div></div>`;
+}
+function bindSignIn(){}
+async function showSignIn(){
+  try{ S.publicConfig = await (await fetch("/api/public-config")).json(); }catch{ S.publicConfig = null; }
+  $("#root").innerHTML = signInView();
+}
+/* ---------- dashboard ---------- */
+function myAssetCards(list){
+  return `<div class="acards">${list.map(a=>`<div class="acard" style="cursor:default">
+    <div>${tagHTML(a.id)}</div><b>${esc(a.name)}</b><span class="small muted">${esc(a.serial?("Serial "+a.serial):a.category)}</span>
+    <div class="row">${a.acknowledgedAt?'<span class="pill p-ok">Signed</span>':'<span class="pill p-warn">Needs your signature</span>'}
+      ${S.tickets.some(t=>t.assetId===a.id&&isActive(t))?'<span class="pill p-info">Request open</span>':""}${openReturnFor(a.id)?'<span class="pill p-warn">Being returned</span>':""}</div>
+    <div class="row" style="margin-top:.25rem">${can("tickets.raise")?`<a class="btn primary" href="#/support/new/${esc(a.id)}" style="padding:.35rem .7rem">Get help</a>`:""}<a class="btn" href="#/asset/${esc(a.id)}" style="padding:.35rem .7rem">${a.acknowledgedAt?"Details":"Review & sign"}</a></div>
+  </div>`).join("")}</div>`;
+}
+function dashboardView(){
+  const as = visibleAssets(), ts = visibleTickets(), now = new Date(), agent = can("tickets.manage"), all = can("assets.viewAll");
+  const mine = S.assets.filter(a=>a.assignedTo===S.me.id), myReqs = S.tickets.filter(t=>t.requesterId===S.me.id);
+  const unsigned = mine.filter(a=>!a.acknowledgedAt);
+  const open = ts.filter(isActive), overdue = ts.filter(isOverdue);
+  const hi = now.getHours()<12?"morning":now.getHours()<17?"afternoon":"evening";
+  let figs;
+  if (all){
+    const cost = as.reduce((s,a)=>s+num(a.cost),0), nbv = as.reduce((s,a)=>s+bookValue(a,now),0);
+    figs = [[as.length,"Assets on register"],[money(cost),"Purchase cost"],[money(nbv),"Book value today"],[open.length+(overdue.length?` <span class="pill p-bad" style="font-size:.75rem;vertical-align:middle">${overdue.length} overdue</span>`:""),"Open requests"]];
+  } else {
+    figs = [[mine.length,"Assets allocated to you"],[unsigned.length,"Waiting for your signature"],[myReqs.filter(isActive).length,"Open requests"],[myReqs.filter(t=>!isActive(t)).length,"Solved requests"]];
+  }
+  const byCat = {}; as.forEach(a=>{ byCat[a.category||"Other"] = (byCat[a.category||"Other"]||0)+num(a.cost); });
+  const cats = Object.entries(byCat).sort((a,b)=>b[1]-a[1]); const maxC = cats[0]?.[1]||1;
+  const queue = agent ? S.tickets.filter(t=>isActive(t)&&(t.status==="New"||t.assigneeId===S.me.id)).sort((a,b)=>new Date(a.dueAt)-new Date(b.dueAt)) : [];
+  return `<div class="pagehead"><div><h1>Good ${hi}, ${esc((S.me.name||"").split(" ")[0]||"there")}</h1>
+      <p class="muted" style="margin:0">${esc(ROLE_NOTE[role()])}</p></div>
+      <div class="row">${can("tickets.raise")&&myHelpAssets().length?`<a class="btn${can("assets.import")?"":" primary"}" href="#/support/new">Get IT help</a>`:""}${can("assets.create")?`<a class="btn" href="#/new">Add asset</a>`:""}${can("assets.import")?`<a class="btn primary" href="#/import">Import from invoice</a>`:""}</div></div>
+    ${S.returns.filter(waitingOnMe).length?`<div class="notice"><b>${S.returns.filter(waitingOnMe).length} return${S.returns.filter(waitingOnMe).length>1?"s or exit clearances need":" or exit clearance needs"} your action.</b> <a href="#/exits">Open Returns & exits</a></div>`:""}
+    ${S.sales.filter(saleWaitingOnMe).length?`<div class="notice"><b>${S.sales.filter(saleWaitingOnMe).map(x=>x.employeeId===S.me.id?`${esc(x.name)} has been offered to you for ${money(x.price)}`:`${esc(x.id)} needs your approval`).join("; ")}.</b> <a href="#/sales">Open ${salesStaff()?"Sales to employees":"My purchases"}</a></div>`:""}
+    ${myOpenExit()?`<div class="notice">Your exit clearance <a href="#/exits/${esc(myOpenExit().id)}">${esc(myOpenExit().id)}</a> is at: <b>${esc(myOpenExit().stage)}</b>.</div>`:""}
+    ${unsigned.length?`<div class="notice">You have ${unsigned.length} asset${unsigned.length>1?"s":""} waiting for your signature. Open each one and choose <b>Sign for this asset</b>.</div>`:""}
+    <div class="figs">${figs.map(([b,s])=>`<div><b>${b}</b><span>${s}</span></div>`).join("")}</div>
+    ${mine.length?`<section style="margin-bottom:1.25rem"><h2>Your assets</h2>${myAssetCards(mine)}</section>`:(!all?`<div class="panel empty" style="margin-bottom:1.25rem">No assets are allocated to you yet. When IT allocates a laptop or phone to you, it appears here.</div>`:"")}
+    <div class="grid g2">
+      ${agent?`<section class="panel"><div class="row"><h2 style="margin:0">Your queue</h2><span class="spacer"></span><a class="small" href="#/support">Open inbox</a></div>
+        ${queue.length?`<ul class="tl" style="margin-top:1rem">${queue.slice(0,7).map(t=>`<li><a href="#/support/${esc(t.id)}"><b>${esc(t.id)}</b> ${esc(t.subject)}</a><div class="when">${esc(plainName(t.requesterId))} · ${statusPill(t.status)} ${priPill(t.priority)} ${isOverdue(t)?'<span class="pill p-bad">Overdue</span>':`due ${fmtDT(t.dueAt)}`}</div></li>`).join("")}</ul>`:`<div class="empty">Nothing waiting. New requests land here.</div>`}</section>`:""}
+      <section class="panel"><div class="row"><h2 style="margin:0">Your requests</h2><span class="spacer"></span>${myHelpAssets().length?`<a class="small" href="#/support${agent?"/new":""}">${agent?"New request":"All requests"}</a>`:""}</div>
+        ${myReqs.length?`<ul class="tl" style="margin-top:1rem">${myReqs.sort((a,b)=>String(b.lastMessageAt).localeCompare(String(a.lastMessageAt))).slice(0,5).map(t=>`<li><a href="#/support/${esc(t.id)}"><b>${esc(t.subject)}</b></a><div class="when">${esc(t.id)} · ${statusPill(t.status)} · updated ${ago(t.lastMessageAt)}${isUnread(t)?' · <b>new reply</b>':""}</div></li>`).join("")}</ul>`
+          :`<div class="empty">No requests yet.${myHelpAssets().length?` Something wrong with one of your assets? <a href="#/support/new">Chat with IT support</a>.`:""}</div>`}</section>
+      ${all?`<section class="panel"><h2>Cost by category</h2>
+        ${cats.length? cats.map(([c,v])=>`<div style="margin-bottom:.7rem"><div class="row small"><span>${esc(c)}</span><span class="spacer"></span><span class="muted">${money(v)}</span></div><div class="bar"><i style="width:${(v/maxC*100).toFixed(1)}%"></i></div></div>`).join("")
+          : `<div class="empty">No assets yet.${can("assets.create")?` <a href="#/new">Add the first one</a> or <a href="#/import">import an invoice</a>.`:""}</div>`}</section>`:""}
+    </div>`;
+}
+function bindDashboard(){}
+
+/* ---------- asset list ---------- */
+function assetsView(){
+  const f = S.filters, q = f.assetQ.toLowerCase();
+  let list = visibleAssets().filter(a=>(!f.assetCat||a.category===f.assetCat)&&(!f.assetStatus||a.status===f.assetStatus)
+    &&(!q||[a.id,a.name,a.serial,a.vendor,a.location,a.department,nameOf(a.assignedTo)].join(" ").toLowerCase().includes(q)));
+  list.sort((a,b)=>String(b.id).localeCompare(String(a.id)));
+  if (!S.loaded.assets) return `<p class="muted"><span class="spin"></span> Loading assets…</p>`;
+  return `<div class="pagehead"><div><h1>${can("assets.viewAll")?"Asset register":"My assets"}</h1><p class="muted" style="margin:0">${list.length} of ${visibleAssets().length} shown</p></div>
+    <div class="row">${can("assets.viewAll")?`<button class="btn" id="exportAssets">Export CSV</button>`:""}${can("assets.create")?`<a class="btn" href="#/new">Add asset</a>`:""}${can("assets.import")?`<a class="btn primary" href="#/import">Import from invoice</a>`:""}</div></div>
+    <div class="row" style="margin-bottom:1rem">
+      <input class="inp" id="aq" placeholder="Search tag, name, serial, person…" value="${esc(f.assetQ)}" style="max-width:320px">
+      <select class="inp" id="acat" style="width:auto"><option value="">All categories</option>${Object.keys(CATEGORIES).map(c=>`<option ${f.assetCat===c?"selected":""}>${c}</option>`).join("")}</select>
+      <select class="inp" id="ast" style="width:auto"><option value="">Any status</option>${ASSET_STATUS.map(c=>`<option ${f.assetStatus===c?"selected":""}>${c}</option>`).join("")}</select>
+    </div>
+    ${list.length?`<div class="tablewrap"><table><thead><tr><th>Tag</th><th>Asset</th><th>Category</th><th>Allocated to</th><th>Status</th><th class="num">Cost</th><th class="num">Book value</th><th>Tickets</th></tr></thead><tbody>
+    ${list.map(a=>{ const ot = S.tickets.filter(t=>t.assetId===a.id&&isActive(t)).length;
+      return `<tr class="link" data-go="asset/${esc(a.id)}"><td>${tagHTML(a.id)}</td><td><b>${esc(a.name)}</b><div class="small muted">${esc(a.serial||"No serial")}</div></td><td>${esc(a.category)}</td><td>${a.assignedTo?esc(nameOf(a.assignedTo)):'<span class="muted">In stock</span>'}${a.assignedTo&&!a.acknowledgedAt?' <span class="pill p-warn">Unsigned</span>':""}</td><td>${statusPill(a.status)}</td><td class="num">${money(a.cost)}</td><td class="num">${money(bookValue(a))}</td><td>${ot?`<span class="pill p-warn">${ot} open</span>`:'<span class="muted">—</span>'}</td></tr>`;}).join("")}
+    </tbody></table></div>`:`<div class="panel empty">${visibleAssets().length?"No assets match these filters.":can("assets.create")?`No assets yet. <a href="#/new">Add one manually</a> or <a href="#/import">import an invoice</a>.`:"No assets are assigned to you yet."}</div>`}`;
+}
+function bindAssets(){
+  const upd = (k,el)=>{ S.filters[k] = el.value; const pos = el.selectionStart; render(); const n = $("#"+el.id); if(n){ n.focus(); if(pos!=null&&n.setSelectionRange) n.setSelectionRange(pos,pos);} };
+  const aq=$("#aq"); if(aq) aq.oninput=()=>upd("assetQ",aq);
+  const ac=$("#acat"); if(ac) ac.onchange=()=>upd("assetCat",ac);
+  const as=$("#ast"); if(as) as.onchange=()=>upd("assetStatus",as);
+  $$("tr[data-go]").forEach(tr=>tr.onclick=()=>go(tr.dataset.go));
+  const ex=$("#exportAssets"); if(ex) ex.onclick=()=>{
+    const rows=[["Tag","Name","Category","Serial","Vendor","Invoice","Location","Department","Assigned to","Status","Purchase date","In service","Cost","Salvage","Life (yrs)","Method","Accumulated depreciation","Book value"]];
+    visibleAssets().forEach(a=>rows.push([a.id,a.name,a.category,a.serial,a.vendor,a.invoiceNumber,a.location,a.department,nameOf(a.assignedTo),a.status,a.purchaseDate,a.inServiceDate,num(a.cost),num(a.salvage),a.life,METHODS[a.method],accumAt(a,new Date()).toFixed(2),bookValue(a).toFixed(2)]));
+    downloadCSV("asset-register-"+todayISO()+".csv", rows);
+  };
+}
+async function downloadCSV(name, rows){
+  const csv = rows.map(r=>r.map(v=>{ const s=String(v??""); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }).join(",")).join("\n");
+  downloadFile(name, "\ufeff"+csv, "text/csv;charset=utf-8"); toast("Downloaded "+name);
+}
+/* ---------- asset detail ---------- */
+function assetDetailView(id){
+  const a = S.assets.find(x=>x.id===id);
+  if (!a) return S.loaded.assets ? `<div class="empty">Asset ${esc(id)} wasn't found. <a href="#/assets">Back to assets</a></div>` : `<p class="muted"><span class="spin"></span> Loading…</p>`;
+  if (!can("assets.viewAll") && a.assignedTo!==S.me.id) return denied();
+  const sch = schedule(a), now = new Date(), acc = accumAt(a,now), nbv = num(a.cost)-acc;
+  const ts = S.tickets.filter(t=>t.assetId===a.id).sort((x,y)=>new Date(y.createdAt)-new Date(x.createdAt));
+  const mine = a.assignedTo===S.me.id, allocs = (a.allocations||[]).slice().reverse();
+  requestProfiles([a.assignedTo, ...allocs.map(x=>x.to)].filter(Boolean));
+  return `<p class="small"><a href="#/assets">← Assets</a></p>
+  <div class="pagehead"><div><div style="margin-bottom:.5rem">${tagHTML(a.id,true)}</div><h1>${esc(a.name)}</h1><p class="muted" style="margin:0">${esc(a.category)} · ${statusPill(a.status)}</p></div>
+    <div class="row">
+      ${mine&&!a.acknowledgedAt?`<button class="btn primary" id="ackBtn">Sign for this asset</button>`:""}
+      ${can("tickets.raise")&&mine&&!["Disposed","Retired"].includes(a.status)?`<a class="btn ${!a.acknowledgedAt?"":"primary"}" href="#/support/new/${esc(a.id)}">Get help with this asset</a>`:""}
+      ${mine&&!openReturnFor(a.id)?`<button class="btn" id="reqReturn">Return to IT</button>`:""}
+      ${openReturnFor(a.id)?`<a class="btn" href="#/exits/${esc(openReturnFor(a.id).id)}">Return in progress · ${esc(openReturnFor(a.id).id)}</a>`:""}
+      ${can("sales.create")&&!["Sold","Disposed"].includes(a.status)&&!S.sales.some(x=>x.assetId===a.id&&saleOpen(x))?`<a class="btn" href="#/sales/new/${esc(a.id)}">Sell to employee</a>`:""}
+      ${can("assets.viewAll")?`<a class="btn" href="#/history/${esc(a.id)}">Full history</a>`:""}
+      ${(can("assets.edit")||can("depr.edit"))?`<a class="btn" href="#/edit/${esc(a.id)}">Edit</a>`:""}
+      ${can("assets.delete")?`<button class="btn danger" id="delAsset">Delete</button>`:""}
+    </div></div>
+  <div class="grid g2">
+    <section class="panel"><h2>Allocation</h2>
+      ${a.assignedTo?`<dl class="kv"><dt>Allocated to</dt><dd>${esc(nameOf(a.assignedTo))}</dd><dt>Since</dt><dd>${fmtDT(a.allocatedAt)}</dd>
+        <dt>Signature</dt><dd>${a.acknowledgedAt?`Signed by ${esc(a.acknowledgedName||plainName(a.acknowledgedBy))} on ${fmtDate(a.acknowledgedAt)}`:'<span class="pill p-warn">Waiting for employee to sign</span>'}</dd></dl>`
+        :`<p class="muted">Not allocated. ${a.status==="In stock"?"Ready to hand out.":"Status is "+esc(a.status)+"."}</p>`}
+      ${can("assets.assign")?`<div class="row" style="margin-top:1rem">${a.status!=="Disposed"&&a.status!=="Retired"?`<button class="btn primary" id="allocBtn">${a.assignedTo?"Reallocate":"Allocate to employee"}</button>`:""}${a.assignedTo?`<button class="btn" id="retBtn">Return to stock</button>`:""}</div>`:""}
+      ${allocs.length?`<h3 style="margin-top:1.25rem">History</h3><div class="tablewrap"><table><thead><tr><th>Employee</th><th>From</th><th>Until</th><th>Returned</th></tr></thead><tbody>
+        ${allocs.map(x=>`<tr><td>${esc(plainName(x.to))}</td><td>${fmtDT(x.from)}</td><td>${x.until?fmtDT(x.until):"Current"}</td><td>${esc(x.returnCondition||"—")}${x.returnNote?`<div class="small muted">${esc(x.returnNote)}</div>`:""}</td></tr>`).join("")}</tbody></table></div>`:""}
+    </section>
+    <section class="panel"><h2>Details</h2><dl class="kv">
+      <dt>Serial number</dt><dd>${esc(a.serial||"—")}</dd><dt>Model</dt><dd>${esc(a.model||"—")}</dd>
+      <dt>Vendor</dt><dd>${esc(a.vendor||"—")}</dd><dt>Invoice</dt><dd>${esc(a.invoiceNumber||"—")}${a.invoiceBlobId?` · <a href="/files/${esc(a.invoiceBlobId)}" target="_blank" rel="noopener">View invoice</a>`:""}</dd>
+      <dt>Location</dt><dd>${esc(a.location||"—")}</dd><dt>Department</dt><dd>${esc(a.department||"—")}</dd>
+      <dt>Purchased</dt><dd>${fmtDate(a.purchaseDate)}</dd><dt>In service</dt><dd>${fmtDate(a.inServiceDate)}</dd>
+      ${a.notes?`<dt>Notes</dt><dd style="white-space:pre-wrap">${esc(a.notes)}</dd>`:""}
+    </dl></section>
+  </div>
+  <section style="margin-top:1rem"><h2>Support requests on this asset</h2>
+    ${ts.length?`<div class="tablewrap"><table><tbody>${ts.map(t=>`<tr class="link" data-go="support/${esc(t.id)}"><td><b>${esc(t.id)}</b></td><td>${esc(t.subject||t.title)}</td><td>${esc(plainName(t.requesterId||t.raisedBy))}</td><td>${statusPill(t.status)}</td><td>${priPill(t.priority)}</td><td class="muted">${fmtDate(t.createdAt)}</td></tr>`).join("")}</tbody></table></div>`:`<div class="panel empty">No support requests on this asset.</div>`}
+  </section>
+  ${can("assets.viewAll")||can("depr.edit")?`<div class="grid g2" style="margin-top:1.5rem">
+    <section class="panel"><h2>Depreciation</h2>
+      <div class="figs f3" style="margin-bottom:.75rem"><div><b>${money(a.cost)}</b><span>Cost</span></div><div><b>${money(acc)}</b><span>Accumulated</span></div><div><b>${money(nbv)}</b><span>Book value</span></div></div>
+      <p class="small muted">${esc(METHODS[a.method]||"Straight line")}${a.method==="WDV"?` at ${a.rate?esc(a.rate)+"%":"derived rate"}`:""} over ${esc(a.life)} years, salvage ${money(a.salvage)}.</p>
+      <div class="chart">${bvChart(a, sch)}</div></section>
+    <section class="panel"><h2>Schedule</h2><div class="tablewrap"><table><thead><tr><th>Year</th><th class="num">Opening</th><th class="num">Charge</th><th class="num">Closing</th></tr></thead><tbody>
+      ${sch.map(r=>`<tr${now>=r.from&&now<=r.to?' style="font-weight:700"':""}><td>${r.year} <span class="small muted">${r.from.getFullYear()}–${String(r.to.getFullYear()).slice(2)}</span></td><td class="num">${money(r.open)}</td><td class="num">${money(r.dep)}</td><td class="num">${money(r.close)}</td></tr>`).join("")}
+    </tbody></table></div></section></div>`:""}
+  ${a.log?.length?`<section style="margin-top:1.5rem"><h2>Activity</h2><ul class="tl">${a.log.slice().reverse().slice(0,20).map(l=>`<li><div class="when">${fmtDT(l.at)} · ${esc(nameOf(l.by))}</div><div class="body">${esc(l.text)}</div></li>`).join("")}</ul></section>`:""}`;
+}
+function bvChart(a, sch){
+  if (!sch.length || !num(a.cost)) return "";
+  const W=520,H=170,pl=8,pr=8,pt=10,pb=24, cost=num(a.cost);
+  const pts=[{t:startOf(a),v:cost},...sch.map(r=>({t:r.to,v:r.close}))];
+  const t0=+pts[0].t,t1=+pts[pts.length-1].t, X=t=>pl+(W-pl-pr)*((+t-t0)/Math.max(1,t1-t0)), Y=v=>pt+(H-pt-pb)*(1-v/cost);
+  const now=new Date(), nx = X(Math.min(Math.max(+now,t0),t1)), nv = Y(bookValue(a,now));
+  const path=pts.map((p,i)=>(i?"L":"M")+X(p.t).toFixed(1)+","+Y(p.v).toFixed(1)).join("");
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Book value falls from ${money(cost)} to ${money(sch.at(-1).close)}">
+    <line x1="${pl}" x2="${W-pr}" y1="${H-pb}" y2="${H-pb}" stroke="var(--line)"/>
+    <path d="${path} L${X(t1)},${H-pb} L${X(t0)},${H-pb}Z" fill="var(--info-bg)"/>
+    <path d="${path}" fill="none" stroke="var(--accent)" stroke-width="2"/>
+    ${+now>=t0&&+now<=t1?`<line x1="${nx}" x2="${nx}" y1="${pt}" y2="${H-pb}" stroke="var(--ink)" stroke-dasharray="3 3"/><circle cx="${nx}" cy="${nv}" r="4" fill="var(--ink)"/><text x="${Math.min(nx+6,W-60)}" y="${Math.max(nv-6,12)}" font-size="11" fill="var(--ink)">Today</text>`:""}
+    <text x="${pl}" y="${H-6}" font-size="11" fill="var(--muted)">${startOf(a).getFullYear()}</text>
+    <text x="${W-pr}" y="${H-6}" font-size="11" fill="var(--muted)" text-anchor="end">${new Date(t1).getFullYear()}</text></svg>`;
+}
+function peopleOptions(sel){
+  const ids = Object.keys(S.members); if (S.me && !ids.includes(S.me.id)) ids.push(S.me.id);
+  if (sel && !ids.includes(sel)) ids.push(sel);
+  requestProfiles(ids);
+  return ids.map(id=>`<option value="${esc(id)}" ${id===sel?"selected":""}>${esc(nameOf(id))}</option>`).join("");
+}
+function logEntry(text){ return {at:new Date().toISOString(), by:S.me.id, text}; }
+function bindAssetDetail(){
+  const a = S.assets.find(x=>x.id===S.route[1]); if(!a) return;
+  $$("tr[data-go]").forEach(tr=>tr.onclick=()=>go(tr.dataset.go));
+  const ack=$("#ackBtn"); if(ack) ack.onclick=()=>openDialog(`<h2>Sign for ${esc(a.name)}</h2>
+    <p>By signing you confirm you've received <b>${esc(a.id)}</b>${a.serial?` (serial ${esc(a.serial)})`:""} in working condition and will look after it under company policy.</p>
+    <label class="f">Type your full name to sign<input id="sigName" autocomplete="name"></label>
+    <div class="row" style="margin-top:1rem;justify-content:flex-end"><button class="btn" data-close>Cancel</button><button class="btn primary" id="sigOk">Sign</button></div>`, d=>{
+      $("#sigOk",d).onclick=async()=>{ const n=$("#sigName",d).value.trim(); if(n.length<2){ toast("Type your name to sign.",true); return; }
+        if (await act(api("POST",`/api/assets/${a.id}/acknowledge`,{name:n}),"Signed for "+a.id)) d.close(); };
+    });
+  const al=$("#allocBtn"); if(al) al.onclick=()=>allocateDialog(a);
+  const rr=$("#reqReturn"); if(rr) rr.onclick=()=>{ S.retDraft=null; go("exits/return/"+a.id); };
+  const rt=$("#retBtn"); if(rt) rt.onclick=()=>returnDialog(a);
+  const del=$("#delAsset"); if(del) del.onclick=()=>openDialog(`<h2>Delete ${esc(a.id)}?</h2><p>This removes the asset from the register. Its support requests stay. To keep the record, set status to Disposed instead.</p><div class="row" style="justify-content:flex-end"><button class="btn" data-close>Cancel</button><button class="btn danger" id="delOk">Delete asset</button></div>`,d=>{
+    $("#delOk",d).onclick=async()=>{ if (await act(api("DELETE",`/api/assets/${a.id}`),"Deleted "+a.id)){ d.close(); go("assets"); } }; });
+}
+
+function openDialog(html, bind){
+  const d=$("#dlg"); d.innerHTML=html; $$("[data-close]",d).forEach(b=>b.onclick=()=>d.close());
+  d.showModal(); bind&&bind(d); const f=$("input,select,textarea",d); f&&f.focus();
+}
+
+/* ---------- asset form ---------- */
+function assetFormView(a){
+  if (S.route[0]==="edit" && !a) return S.loaded.assets?`<div class="empty">Asset not found.</div>`:`<p class="muted"><span class="spin"></span> Loading…</p>`;
+  if (a && !can("assets.edit") && !can("depr.edit")) return denied();
+  const e = a || {category:"Laptop",status:"In stock",purchaseDate:todayISO(),inServiceDate:todayISO(),life:3,method:S.config.defaultMethod||"SL",salvage:0,rate:""};
+  const lock = a && !can("assets.edit") ? "disabled" : ""; // finance edits depreciation only
+  const dlock = !(can("depr.edit")||can("assets.edit")) ? "disabled" : "";
+  const fld = (k,l,type="text",extra="") => `<label class="f">${l}<input name="${k}" type="${type}" value="${esc(e[k]??"")}" ${extra}></label>`;
+  return `<p class="small"><a href="${a?"#/asset/"+esc(a.id):"#/assets"}">← ${a?"Back to asset":"Assets"}</a></p>
+  <div class="pagehead"><div><h1>${a?"Edit "+esc(a.id):"Add an asset"}</h1><p class="muted" style="margin:0">${a?"":"Enter details by hand, or "}${a?"":`<a href="#/import">import them from an invoice</a>.`}</p></div></div>
+  ${lock?`<div class="notice">As Finance you can change depreciation settings. Other details are managed by Asset Managers.</div>`:""}
+  <form id="assetForm" class="grid" novalidate>
+    <section class="panel"><h2>Asset</h2><div class="grid g3">
+      <label class="f">Name<input name="name" required value="${esc(e.name||"")}" ${lock} placeholder="e.g. Dell Latitude 7440"></label>
+      <label class="f">Category<select name="category" ${lock}>${Object.keys(CATEGORIES).map(c=>`<option ${e.category===c?"selected":""}>${c}</option>`).join("")}</select></label>
+      <label class="f">Status<select name="status" ${lock}>${ASSET_STATUS.map(c=>`<option ${e.status===c?"selected":""}>${c}</option>`).join("")}</select></label>
+      ${fld("serial","Serial number","text",lock)}${fld("model","Model","text",lock)}${fld("vendor","Vendor","text",lock)}
+      ${fld("location","Location","text",lock)}${fld("department","Department","text",lock)}
+    </div><label class="f" style="margin-top:1rem">Notes<textarea name="notes" ${lock}>${esc(e.notes||"")}</textarea></label></section>
+    <section class="panel"><h2>Purchase & depreciation</h2><div class="grid g3">
+      ${fld("invoiceNumber","Invoice number","text",lock)}${fld("purchaseDate","Purchase date","date",lock)}${fld("inServiceDate","Put in service","date",dlock)}
+      ${fld("cost","Cost ("+esc(S.config.currency)+")","number",'min="0" step="0.01" required '+lock)}
+      ${fld("salvage","Salvage value","number",'min="0" step="0.01" '+dlock)}
+      ${fld("life","Useful life (years)","number",'min="1" max="50" step="1" '+dlock)}
+      <label class="f">Method<select name="method" ${dlock}>${Object.entries(METHODS).map(([k,v])=>`<option value="${k}" ${e.method===k?"selected":""}>${v}</option>`).join("")}</select></label>
+      <label class="f" id="rateWrap">WDV rate (% per year)<input name="rate" type="number" min="0" max="100" step="0.01" value="${esc(e.rate??"")}" placeholder="Blank = derived from life" ${dlock}></label>
+    </div>
+    <div id="deprPreview" class="notice" style="margin:1rem 0 0"></div></section>
+    <div class="row"><span class="spacer"></span><a class="btn" href="${a?"#/asset/"+esc(a.id):"#/assets"}">Cancel</a><button class="btn primary" type="submit">${a?"Save changes":"Add asset"}</button></div>
+  </form>`;
+}
+function readForm(form){ const o={}; new FormData(form).forEach((v,k)=>o[k]=typeof v==="string"?v.trim():v); $$("select:disabled,input:disabled,textarea:disabled",form).forEach(el=>delete o[el.name]); return o; }
+function bindAssetForm(){
+  const form=$("#assetForm"); if(!form) return;
+  const a = S.route[0]==="edit" ? S.assets.find(x=>x.id===S.route[1]) : null;
+  const preview=()=>{
+    const all = {...(a||{}), ...Object.fromEntries(new FormData(form))};
+    ["cost","salvage","life","method","rate","inServiceDate","purchaseDate"].forEach(k=>{ const el=form.elements[k]; if(el) all[k]=el.value; });
+    $("#rateWrap").style.display = all.method==="WDV" ? "" : "none";
+    const ys = yearlyDep(all);
+    $("#deprPreview").innerHTML = num(all.cost) ? `First-year charge <b>${money(ys[0]||0)}</b> · book value today <b>${money(bookValue(all))}</b> · fully depreciated by <b>${fmtDate(schedule(all).at(-1)?.to)}</b>` : "Enter a cost to preview depreciation.";
+  };
+  form.addEventListener("input", preview); preview();
+  const cat=form.elements.category;
+  if(cat && !a) cat.onchange=()=>{ const d=CATEGORIES[cat.value]; form.elements.life.value=d.life; if(form.elements.method.value==="WDV") form.elements.rate.value=d.wdv; preview(); };
+  const meth=form.elements.method; meth.addEventListener("change",()=>{ if(meth.value==="WDV" && !form.elements.rate.value) form.elements.rate.value=CATEGORIES[form.elements.category.value]?.wdv||""; preview(); });
+  form.onsubmit=async ev=>{
+    ev.preventDefault();
+    const d = readForm(form);
+    if (!a && !d.name){ toast("Give the asset a name.",true); form.elements.name.focus(); return; }
+    if ("cost" in d && !(num(d.cost)>0)){ toast("Enter a cost above zero.",true); form.elements.cost.focus(); return; }
+    if ("salvage" in d && "cost" in d && num(d.salvage)>num(d.cost)){ toast("Salvage value can't exceed cost.",true); return; }
+    const btn = form.querySelector('button[type=submit]'); btn.disabled = true;
+    const res = a ? await act(api("PATCH", `/api/assets/${a.id}`, d), "Saved "+a.id) : await act(api("POST", "/api/assets", d));
+    btn.disabled = false;
+    if (res){ if (!a) toast("Added "+res.id); go("asset/"+(a?a.id:res.id)); }
+  };
+}
+/* ---------- invoice OCR import ---------- */
+function importView(){
+  const o = S.ocr;
+  const head = `<p class="small"><a href="#/assets">← Assets</a></p><div class="pagehead"><div><h1>Import assets from an invoice</h1><p class="muted" style="margin:0">Upload a photo, scan or PDF of a purchase invoice. Claude reads it, then you check the lines before anything is created.</p></div></div>`;
+  if (!S.features?.ai) return head+`<div class="notice warn">Invoice reading needs the Claude API key on the server (ANTHROPIC_API_KEY). You can still <a href="#/new">add assets by hand</a>.</div>`;
+  if (o.status==="idle"||o.status==="error") return head+`${o.error?`<div class="notice bad">${esc(o.error)}</div>`:""}
+    <label class="drop" id="drop"><input type="file" id="invFile" accept="image/jpeg,image/png,image/webp,application/pdf" class="sr">
+      <b>Drop an invoice here or choose a file</b><div class="small muted">JPG, PNG, WebP or PDF (first page is read)</div></label>`;
+  if (o.status==="reading") return head+`<div class="panel"><p><span class="spin"></span> ${esc(o.stage||"Reading invoice…")}</p><p class="small muted">This usually takes 10–40 seconds.</p><button class="btn" id="ocrStop">Stop</button></div>`;
+  const r = o.result;
+  return head+`<div class="grid g2" style="margin-bottom:1rem">
+    <section class="panel"><h2>Invoice</h2><div class="grid g2">
+      <label class="f">Vendor<input id="invVendor" value="${esc(r.vendor||"")}"></label>
+      <label class="f">Vendor tax ID (GSTIN/VAT)<input id="invTax" value="${esc(r.vendor_tax_id||"")}"></label>
+      <label class="f">Invoice number<input id="invNo" value="${esc(r.invoice_number||"")}"></label>
+      <label class="f">Invoice date<input id="invDate" type="date" value="${esc(r.invoice_date||todayISO())}"></label>
+    </div></section>
+    <section class="panel"><h2>Totals read</h2><dl class="kv"><dt>Subtotal</dt><dd>${money(r.subtotal,r.currency)}</dd><dt>Tax</dt><dd>${money(r.tax_total,r.currency)}</dd><dt>Total</dt><dd>${money(r.total,r.currency)}</dd><dt>Currency</dt><dd>${esc(r.currency||S.config.currency)}${r.currency&&r.currency!==S.config.currency?` <span class="pill p-warn">Register uses ${esc(S.config.currency)}</span>`:""}</dd></dl>
+      <label class="check" style="margin-top:.75rem"><input type="checkbox" id="capTax"> Add tax to asset cost (use when input tax credit can't be claimed)</label>
+      ${o.blobId?`<p class="small" style="margin:.5rem 0 0"><a href="/files/${esc(o.blobId)}" target="_blank" rel="noopener">View uploaded invoice</a> — attached to each asset.</p>`:""}
+    </section></div>
+  ${r.notes?`<div class="notice warn">${esc(r.notes)}</div>`:""}
+  <h2>Line items</h2><p class="small muted">Untick lines that aren't assets (delivery, services). Quantity 3 creates three assets.</p>
+  <div class="tablewrap"><table id="lines"><thead><tr><th>Create</th><th>Description</th><th>Category</th><th class="num">Qty</th><th class="num">Unit cost</th><th>Life (yrs)</th><th>Serial numbers</th></tr></thead><tbody>
+  ${(r.items||[]).map((it,i)=>`<tr data-i="${i}"><td><input type="checkbox" class="ln-on" ${it.is_capital_asset===false?"":"checked"} aria-label="Create assets from line ${i+1}"></td>
+    <td><input class="inp ln-name" value="${esc(it.description||"")}" style="min-width:220px"></td>
+    <td><select class="inp ln-cat">${Object.keys(CATEGORIES).map(c=>`<option ${it.category===c?"selected":""}>${c}</option>`).join("")}</select></td>
+    <td class="num"><input class="inp ln-qty" type="number" min="1" step="1" value="${Math.max(1,Math.round(num(it.quantity)||1))}" style="width:70px"></td>
+    <td class="num"><input class="inp ln-cost" type="number" min="0" step="0.01" value="${num(it.unit_price)||(num(it.line_total)/Math.max(1,num(it.quantity)||1))}" style="width:120px"></td>
+    <td><input class="inp ln-life" type="number" min="1" step="1" value="${CATEGORIES[it.category]?.life||5}" style="width:70px"></td>
+    <td><input class="inp ln-serial" value="${esc((it.serial_numbers||[]).join(", "))}" placeholder="Comma separated" style="min-width:160px"></td></tr>`).join("")}
+  </tbody></table></div>
+  <div class="row" style="margin-top:1rem"><button class="btn" id="ocrReset">Start over</button><span class="spacer"></span><span id="createSummary" class="muted small"></span><button class="btn primary" id="ocrCreate">Create assets</button></div>`;
+}
+let ocrCtl = null;
+function bindImport(){
+  const o = S.ocr;
+  const inp=$("#invFile"), drop=$("#drop");
+  if (inp){
+    inp.onchange=()=>inp.files[0]&&startOCR(inp.files[0]);
+    ["dragover","dragenter"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add("over");}));
+    ["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove("over");}));
+    drop.addEventListener("drop",e=>{ const f=e.dataTransfer.files[0]; if(f) startOCR(f); });
+  }
+  const st=$("#ocrStop"); if(st) st.onclick=()=>ocrCtl?.abort();
+  const rs=$("#ocrReset"); if(rs) rs.onclick=()=>{ S.ocr={status:"idle",file:null,result:null,error:"",blobId:null}; render(); };
+  const cr=$("#ocrCreate");
+  if (cr){
+    const summary=()=>{ let n=0,v=0; $$("#lines tbody tr").forEach(tr=>{ if($(".ln-on",tr).checked){ const q=Math.max(1,Math.round(num($(".ln-qty",tr).value))); n+=q; v+=q*num($(".ln-cost",tr).value);} });
+      $("#createSummary").textContent = n?`${n} asset${n>1?"s":""}, ${money(v)} before tax`:"Nothing selected"; cr.disabled=!n; };
+    $("#lines").addEventListener("input",summary); $("#lines").addEventListener("change",e=>{ if(e.target.classList.contains("ln-cat")){ const tr=e.target.closest("tr"); $(".ln-life",tr).value=CATEGORIES[e.target.value]?.life||5; } summary(); });
+    summary();
+    cr.onclick=async()=>{
+      const r=o.result, capTax=$("#capTax").checked, sub=num(r.subtotal)||(r.items||[]).reduce((s,i)=>s+num(i.line_total),0);
+      const body = {vendor:$("#invVendor").value.trim(), vendorTaxId:$("#invTax").value.trim(), invoiceNumber:$("#invNo").value.trim(), date:$("#invDate").value||todayISO(),
+        fileId:o.blobId||null, taxRatio: capTax&&sub ? num(r.tax_total)/sub : 0, lines:[]};
+      $$("#lines tbody tr").forEach(tr=>{
+        if(!$(".ln-on",tr).checked) return;
+        body.lines.push({name:$(".ln-name",tr).value.trim(), category:$(".ln-cat",tr).value, qty:Math.max(1,Math.round(num($(".ln-qty",tr).value))),
+          unitCost:num($(".ln-cost",tr).value), life:Math.max(1,Math.round(num($(".ln-life",tr).value))), serials:$(".ln-serial",tr).value.split(",").map(s=>s.trim()).filter(Boolean)});
+      });
+      cr.disabled=true; cr.innerHTML='<span class="spin"></span> Creating…';
+      const res = await act(api("POST","/api/assets/import",body));
+      if(res){ toast(`Created ${res.created.length} asset${res.created.length>1?"s":""}`); S.ocr={status:"idle",file:null,result:null,error:"",blobId:null}; S.filters.assetQ=body.invoiceNumber||""; go("assets"); }
+      else { cr.disabled=false; cr.textContent="Create assets"; }
+    };
+  }
+}
+function loadScript(src){ return new Promise((res,rej)=>{ const s=document.createElement("script"); s.src=src; s.onload=res; s.onerror=()=>rej(new Error("Couldn't load "+src)); document.head.appendChild(s); }); }
+async function pdfToImage(file){
+  if (!window.pdfjsLib){
+    await loadScript("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js");
+    await loadScript("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js");
+  }
+  const pdf = await window.pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;
+  const page = await pdf.getPage(1), vp = page.getViewport({scale:2});
+  const c = document.createElement("canvas"); c.width=vp.width; c.height=vp.height;
+  await page.render({canvasContext:c.getContext("2d"), viewport:vp}).promise;
+  return await new Promise(r=>c.toBlob(r,"image/png"));
+}
+async function startOCR(file){
+  const okType = /^image\/(jpeg|png|webp)$/.test(file.type) || file.type==="application/pdf";
+  if (!okType){ S.ocr={...S.ocr,status:"error",error:"That file type can't be read. Use JPG, PNG, WebP or PDF."}; render(); return; }
+  S.ocr={status:"reading",file,result:null,error:"",blobId:null,stage:"Claude is reading the invoice…"}; render();
+  ocrCtl = new AbortController();
+  try{
+    const fd = new FormData(); fd.append("file", file);
+    const res = await api("POST", "/api/ocr", fd, true, ocrCtl.signal);
+    const r = res.result;
+    if (!r.items?.length){ S.ocr={status:"error",error:r.notes||"No line items were found. Try a clearer photo.",file:null,result:null,blobId:null}; render(); return; }
+    S.ocr={status:"review",file,result:r,error:"",blobId:res.fileId}; render();
+  }catch(e){
+    S.ocr = e.name==="AbortError" ? {status:"idle",file:null,result:null,error:"",blobId:null} : {status:"error",error:e.message||"Reading failed. Try again.",file:null,result:null,blobId:null};
+    render();
+  }
+}
+/* ---------- people picker ---------- */
+function pickerHTML(pid, label){
+  const st = S.pick[pid] || {};
+  return `<label class="f">${esc(label)}<div class="pp" id="${pid}"><input class="inp pp-q" id="${pid}-q" placeholder="Search people by name" autocomplete="off" value="${esc(st.text||"")}"><div class="pp-list" hidden></div></div></label>`;
+}
+function bindPicker(pid, onPick){
+  const root = document.getElementById(pid); if (!root) return;
+  const q = $(".pp-q",root), list = $(".pp-list",root);
+  const choose = (id)=>{ S.pick[pid] = {id, text:plainName(id), open:false}; q.value = plainName(id); list.hidden = true; onPick && onPick(id); };
+  const show = ()=>{
+    const raw = q.value.trim(), term = raw.toLowerCase();
+    const res = S.people.filter(p=>!term || (p.name||"").toLowerCase().includes(term) || (p.email||"").toLowerCase().includes(term)).slice(0,8);
+    const canAdd = (can("people.add")||can("people.manage")) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw) && !S.people.some(p=>p.email===term);
+    let html = res.map(p=>`<button type="button" data-id="${esc(p.id)}">${esc(p.id===S.me.id?plainName(p.id)+" (you)":(p.name||p.email))} <span class="small muted">${esc(p.email)}${p.signedIn?"":" · hasn't signed in yet"}</span></button>`).join("");
+    if (canAdd) html += `<button type="button" data-add="1">Add <b>${esc(raw)}</b> <span class="small muted">— they can sign in later</span></button>`;
+    list.innerHTML = html || `<div class="small muted" style="padding:.6rem">No one matches “${esc(raw)}”.${(can("people.add")||can("people.manage"))?" Type their full work email to add them.":""}</div>`;
+    list.hidden = false; S.pick[pid] = {...(S.pick[pid]||{}), open:true};
+    $$("button[data-id]",list).forEach(b=>b.onmousedown = e=>{ e.preventDefault(); choose(b.dataset.id); });
+    const add = $("button[data-add]",list);
+    if (add) add.onmousedown = async e=>{ e.preventDefault(); list.hidden = true;
+      try{ const p = await api("POST","/api/people",{email:raw}); profileCache[p.id]={name:p.name,email:p.email}; S.people.push(p); S.pick[pid]={id:p.id,text:p.name,open:false}; q.value=p.name; toast(`Added ${p.email}`); onPick && onPick(p.id); refresh(true).catch(()=>{}); }
+      catch(err){ toast(err.message,true); } };
+  };
+  q.onfocus = show;
+  q.oninput = ()=>{ S.pick[pid] = {id:null, text:q.value, open:true}; show(); };
+  q.onblur = ()=>setTimeout(()=>{ if (document.activeElement?.id !== q.id){ list.hidden = true; if (S.pick[pid]) S.pick[pid].open = false; } }, 150);
+  if (S.pick[pid]?.open) setTimeout(()=>{ if (document.activeElement?.id === q.id) show(); }, 0);
+}
+/* ---------- allocation ---------- */
+async function allocate(a, to, date, note){
+  return act(api("POST", `/api/assets/${a.id}/allocate`, {to, when: date ? toISO(date) : null, note: note||""}), `${a.id} allocated to ${plainName(to)}`);
+}
+async function returnAsset(a, condition, note, whenLocal){
+  return act(api("POST", `/api/assets/${a.id}/return`, {condition, note: note||"", when: whenLocal ? toISO(whenLocal) : null}), `${a.id} returned`);
+}
+function allocateDialog(a){
+  S.pick.dlgPerson = {};
+  openDialog(`<h2>${a.assignedTo?"Reallocate":"Allocate"} ${esc(a.id)}</h2><p class="muted small">${esc(a.name)}${a.assignedTo?` · currently with ${esc(plainName(a.assignedTo))}`:""}</p>
+    <div class="grid">${pickerHTML("dlgPerson","Employee")}
+    <div class="grid g2"><label class="f">Allocated on (date & time)<input type="datetime-local" id="dlgDate" value="${nowLocal()}"></label><label class="f">Note (optional)<input id="dlgNote" placeholder="e.g. with charger and bag"></label></div></div>
+    <p class="small muted" style="margin-top:.75rem">The employee sees the asset when they sign in and is asked to sign for it.</p>
+    <div class="row" style="justify-content:flex-end"><button class="btn" data-close>Cancel</button><button class="btn primary" id="dlgOk">Allocate</button></div>`, d=>{
+    bindPicker("dlgPerson");
+    $("#dlgOk",d).onclick = async ()=>{ const to = S.pick.dlgPerson?.id; if (!to){ toast("Pick an employee from the list.",true); return; }
+      if (to===a.assignedTo){ toast("It's already with them."); return; }
+      if (await allocate(a, to, $("#dlgDate",d).value, $("#dlgNote",d).value.trim())) d.close(); };
+  });
+}
+function returnDialog(a){
+  openDialog(`<h2>Return ${esc(a.id)} to stock</h2><p class="muted small">From ${esc(plainName(a.assignedTo))}</p>
+    <div class="grid"><label class="f">Condition<select id="rCond"><option>Good</option><option value="Damaged">Damaged — needs repair</option><option>Lost</option></select></label>
+    <label class="f">Returned on (date & time)<input type="datetime-local" id="rWhen" value="${nowLocal()}"></label>
+    <label class="f">Note (optional)<input id="rNote" placeholder="e.g. routine return, replaced with new model"></label></div>
+    <div class="row" style="margin-top:1rem;justify-content:flex-end"><button class="btn" data-close>Cancel</button><button class="btn primary" id="rOk">Record return</button></div>`, d=>{
+    $("#rOk",d).onclick = async ()=>{ if (await returnAsset(a, $("#rCond",d).value, $("#rNote",d).value.trim(), $("#rWhen",d).value)) d.close(); };
+  });
+}
+function allocationsView(){
+  if (!S.loaded.assets) return `<p class="muted"><span class="spin"></span> Loading…</p>`;
+  const q = S.filters.allocQ.toLowerCase();
+  const allocated = S.assets.filter(a=>a.assignedTo), available = S.assets.filter(a=>!a.assignedTo && a.status==="In stock");
+  requestProfiles(allocated.map(a=>a.assignedTo));
+  const rows = allocated.filter(a=>!q || [a.id,a.name,a.serial,plainName(a.assignedTo)].join(" ").toLowerCase().includes(q))
+    .sort((x,y)=>plainName(x.assignedTo).localeCompare(plainName(y.assignedTo)));
+  const people = new Set(allocated.map(a=>a.assignedTo)).size;
+  return `<div class="pagehead"><div><h1>Allocations</h1><p class="muted" style="margin:0">Hand assets to employees, track signatures and take them back. Employee-raised returns and exit clearances are under <a href="#/exits">Returns & exits</a>.</p></div></div>
+  <div class="figs"><div><b>${allocated.length}</b><span>Allocated</span></div><div><b>${available.length}</b><span>In stock, ready to allocate</span></div><div><b>${allocated.filter(a=>!a.acknowledgedAt).length}</b><span>Waiting for signature</span></div><div><b>${people}</b><span>Employees holding assets</span></div></div>
+  <section class="panel" style="margin-bottom:1.25rem"><h2>Allocate an asset</h2>
+    ${available.length?`<div class="grid g4" style="align-items:end">
+      <label class="f">Asset<select class="inp" id="alAsset">${available.map(a=>`<option value="${esc(a.id)}" ${S.pick.alAsset===a.id?"selected":""}>${esc(a.id)} · ${esc(a.name)}</option>`).join("")}</select></label>
+      ${pickerHTML("alPerson","Employee")}
+      <label class="f">Allocated on (date & time)<input type="datetime-local" id="alDate" value="${esc(S.pick.alDate||nowLocal())}"></label>
+      <button class="btn primary" id="alGo" style="justify-content:center">Allocate</button></div>`
+      :`<p class="muted" style="margin:0">Nothing is in stock. ${can("assets.create")?`<a href="#/new">Add an asset</a> or <a href="#/import">import an invoice</a>.`:""}</p>`}
+  </section>
+  <div class="row" style="margin-bottom:1rem"><input class="inp" id="alQ" placeholder="Search employee, tag or serial…" value="${esc(S.filters.allocQ)}" style="max-width:320px"></div>
+  ${rows.length?`<div class="tablewrap"><table><thead><tr><th>Employee</th><th>Asset</th><th>Allocated on</th><th>Signature</th><th>Requests</th><th></th></tr></thead><tbody>
+    ${rows.map(a=>{ const ot=S.tickets.filter(t=>t.assetId===a.id&&isActive(t)).length;
+      return `<tr><td><b>${esc(plainName(a.assignedTo))}</b></td><td><a href="#/asset/${esc(a.id)}">${tagHTML(a.id)}</a> ${esc(a.name)}</td><td>${fmtDT(a.allocatedAt)}</td>
+      <td>${a.acknowledgedAt?`<span class="pill p-ok">Signed ${fmtDate(a.acknowledgedAt)}</span>`:'<span class="pill p-warn">Waiting</span>'}</td><td>${ot?`<span class="pill p-info">${ot} open</span>`:'<span class="muted">—</span>'}</td>
+      <td><div class="row"><button class="btn" data-realloc="${esc(a.id)}" style="padding:.3rem .6rem">Reallocate</button><button class="btn" data-return="${esc(a.id)}" style="padding:.3rem .6rem">Return</button></div></td></tr>`; }).join("")}
+  </tbody></table></div>`:`<div class="panel empty">${allocated.length?"No allocations match.":"No assets have been allocated yet."}</div>`}`;
+}
+function bindAllocations(){
+  bindPicker("alPerson");
+  const as=$("#alAsset"); if(as) as.onchange=()=>S.pick.alAsset=as.value;
+  const ad=$("#alDate"); if(ad) ad.onchange=()=>S.pick.alDate=ad.value;
+  const q=$("#alQ"); if(q) q.oninput=()=>{ S.filters.allocQ=q.value; render(); };
+  const goB=$("#alGo"); if(goB) goB.onclick=async()=>{
+    const a=S.assets.find(x=>x.id===$("#alAsset").value), to=S.pick.alPerson?.id;
+    if(!to){ toast("Pick an employee from the list.",true); $("#alPerson-q").focus(); return; }
+    goB.disabled=true;
+    if(await allocate(a,to,$("#alDate").value,"")){ S.pick.alPerson={}; S.pick.alAsset=null; S.pick.alDate=null; }
+    render();
+  };
+  $$("[data-realloc]").forEach(b=>b.onclick=()=>allocateDialog(S.assets.find(x=>x.id===b.dataset.realloc)));
+  $$("[data-return]").forEach(b=>b.onclick=()=>returnDialog(S.assets.find(x=>x.id===b.dataset.return)));
+}
+
+/* ---------- support: chat help desk ---------- */
+const PRI_LABEL = {Low:"It can wait", Medium:"It's slowing me down", High:"I can't work", Critical:"Several people are affected"};
+function syncMsgWatch(){
+  const want = S.route[0]==="support" && S.route[1] && S.route[1]!=="new" ? S.route[1] : null;
+  if ((S.msgSub?.id||null) === want) return;
+  if (S.msgSub){ clearInterval(S.msgSub.timer); S.msgSub = null; }
+  if (!want) return;
+  S.msgSub = {id:want, last:"", timer:setInterval(()=>{ if (document.visibilityState==="visible") reloadMsgs(want); }, 4000)};
+  setTimeout(()=>reloadMsgs(want));
+}
+async function reloadMsgs(id){
+  try{
+    const l = await api("GET", `/api/tickets/${encodeURIComponent(id)}/messages`);
+    if (S.msgSub?.id !== id) return;
+    const js = JSON.stringify(l);
+    if (js !== S.msgSub.last){ S.msgSub.last = js; S.msgs[id] = l; render(); }
+  }catch{}
+}
+const myHelpAssets = () => S.assets.filter(a=>a.assignedTo===S.me?.id && !["Disposed","Retired"].includes(a.status))
+  .sort((x,y)=>String(x.allocatedAt||"").localeCompare(String(y.allocatedAt||"")));
+const serialLabel = a => a.serial ? a.serial : "No serial";
+function initNewRequest(assetId){
+  const mine = myHelpAssets();
+  const pick = mine.find(a=>a.id===assetId) || mine[0];
+  S.nr = {assetId: pick ? pick.id : null, category:null, priority:"Medium", subject:"", body:"", file:null, sending:false};
+}
+function supportView(){
+  const agent = can("tickets.manage"), id = S.route[1], isNew = id==="new";
+  if (!can("tickets.raise") && !agent) return denied();
+  if (isNew && !S.nr) initNewRequest(S.route[2]);
+  const t = id && !isNew ? S.tickets.find(x=>x.id===id) : null;
+  const allowed = t && (can("tickets.viewAll") || t.requesterId===S.me.id || t.assigneeId===S.me.id);
+  let pane;
+  if (isNew) pane = newRequestPane();
+  else if (t && allowed) pane = threadPane(t);
+  else if (t) pane = `<div class="emptypane">You don't have access to ${esc(id)}.</div>`;
+  else if (id) pane = S.loaded.tickets ? `<div class="emptypane">Request ${esc(id)} wasn't found. <a href="#/support">Back</a></div>` : `<div class="emptypane"><span class="spin"></span></div>`;
+  else pane = `<div class="emptypane"><p style="font-size:1.05rem;color:var(--ink);font-weight:600;margin-bottom:.35rem">${agent?"Pick a request from the queue":"Need help with a laptop, phone or other asset?"}</p>
+    <p>${agent?"Replies you send here appear in the employee's chat straight away.":myHelpAssets().length?"Start a chat with IT support about one of your assets. Your asset's serial number is picked for you.":"You can raise requests on assets allocated to you. You don't have any yet."}</p>
+    ${!agent&&myHelpAssets().length?`<a class="btn primary" href="#/support/new">New request</a>`:""}</div>`;
+  const side = t && allowed ? `<aside class="dpane dside">${ticketSide(t)}</aside>` : "";
+  return `<div class="desk ${id?"has-thread":""} ${side?"":"no-side"}">
+    <section class="dpane dlist">${agent ? inboxList() : requesterList()}</section>
+    <section class="dpane dthread">${pane}</section>${side}</div>`;
+}
+function ticketRow(t, agent){
+  const unread = isUnread(t);
+  return `<a class="titem${S.route[1]===t.id?" on":""}${unread?" unread":""}" href="#/support/${esc(t.id)}">
+    <div class="row" style="flex-wrap:nowrap"><b class="ell" style="flex:1">${esc(t.subject)}</b><span class="small muted" style="white-space:nowrap">${ago(t.lastMessageAt||t.createdAt)}</span></div>
+    <div class="small muted ell">${agent?esc(plainName(t.requesterId))+" · ":""}${esc(t.id)}${t.assetTag?" · "+esc(t.assetTag):""}${ticketSerial(t)?" · SN "+esc(ticketSerial(t)):""}</div>
+    ${t.lastPreview&&!agent?`<div class="small ell">${esc(t.lastPreview)}</div>`:""}
+    <div class="row" style="margin-top:.3rem;gap:.3rem">${statusPill(t.status)}${agent?priPill(t.priority):""}${isOverdue(t)?'<span class="pill p-bad">Overdue</span>':""}${agent&&t.assigneeId&&t.assigneeId!==S.me.id?`<span class="small muted">→ ${esc(plainName(t.assigneeId))}</span>`:""}</div></a>`;
+}
+function inboxList(){
+  const all = visibleTickets(), f = S.filters, q = f.inboxQ.toLowerCase();
+  const views = [
+    ["unassigned","Unassigned", t=>isActive(t) && !t.assigneeId],
+    ["mine","Mine", t=>isActive(t) && t.assigneeId===S.me.id],
+    ["open","All open", isActive],
+    ["waiting","Pending & on-hold", t=>["Pending","On-hold"].includes(t.status)],
+    ["solved","Solved", t=>!isActive(t)]];
+  const v = views.find(x=>x[0]===f.inboxView) || views[0];
+  const rank = {Critical:0,High:1,Medium:2,Low:3};
+  const list = all.filter(v[2]).filter(t=>!q || [t.id,t.subject,t.assetTag,t.assetName,ticketSerial(t),plainName(t.requesterId)].join(" ").toLowerCase().includes(q))
+    .sort((a,b)=> v[0]==="solved" ? String(b.solvedAt||b.lastMessageAt).localeCompare(String(a.solvedAt||a.lastMessageAt))
+      : (isOverdue(b)-isOverdue(a)) || (rank[a.priority]-rank[b.priority]) || String(a.dueAt).localeCompare(String(b.dueAt)));
+  return `<div class="lhead"><div class="row"><h2 style="margin:0">Support inbox</h2><span class="spacer"></span>${myHelpAssets().length?`<a class="btn" href="#/support/new" style="padding:.3rem .65rem">New</a>`:""}</div>
+    <div class="chips">${views.map(([k,l,fn])=>`<button class="chip${v[0]===k?" on":""}" data-view="${k}">${l} ${all.filter(fn).length}</button>`).join("")}</div>
+    <input class="inp" id="inboxQ" placeholder="Search requests…" value="${esc(f.inboxQ)}"></div>
+  <div class="litems">${S.loaded.tickets ? (list.map(t=>ticketRow(t,true)).join("") || `<div class="empty small">No requests in this view.</div>`) : `<div class="empty"><span class="spin"></span></div>`}</div>`;
+}
+function requesterList(){
+  const mine = S.tickets.filter(t=>t.requesterId===S.me.id), f = S.filters;
+  const list = mine.filter(t=>f.reqView==="open"?isActive(t):!isActive(t)).sort((a,b)=>String(b.lastMessageAt).localeCompare(String(a.lastMessageAt)));
+  return `<div class="lhead"><div class="row"><h2 style="margin:0">My requests</h2><span class="spacer"></span>${myHelpAssets().length?`<a class="btn primary" href="#/support/new" style="padding:.35rem .7rem">New request</a>`:""}</div>
+    <div class="chips"><button class="chip${f.reqView==="open"?" on":""}" data-req="open">Open ${mine.filter(isActive).length}</button><button class="chip${f.reqView==="done"?" on":""}" data-req="done">Solved ${mine.filter(t=>!isActive(t)).length}</button></div></div>
+  <div class="litems">${list.map(t=>ticketRow(t,false)).join("") || `<div class="empty small">${f.reqView==="open"?"No open requests.":"Nothing solved yet."}</div>`}</div>`;
+}
+const botMsg = html => `<div class="msg bot"><div class="who">IT support assistant</div><div class="body">${html}</div></div>`;
+const meMsg = (html, change) => `<div class="msg me"><div class="body">${html}</div>${change?`<div class="when"><button class="linkbtn" data-change="${change}">Change</button></div>`:""}</div>`;
+function newRequestPane(){
+  const nr = S.nr, first = esc((S.me.name||"").split(" ")[0]||"there");
+  const mine = myHelpAssets();
+  if (!mine.some(a=>a.id===nr.assetId)) nr.assetId = mine[0]?.id || null;
+  const a = nr.assetId ? S.assets.find(x=>x.id===nr.assetId) : null;
+  const head = `<div class="thead"><a class="back" href="#/support" aria-label="Back to requests">←</a><div><b>New request</b><div class="small muted">Requests are raised on the assets allocated to you</div></div></div>`;
+  if (!a){
+    return head+`<div class="tbody" id="thread" data-t="new">${botMsg(`Hi ${first}! You can raise a request only on an asset that's allocated to you, and you don't have any yet.`)}
+      ${botMsg("Ask your asset manager to allocate your laptop or phone to you in Asset Desk. Once it shows under <b>Your assets</b>, you can get help with it here.")}</div>
+      <div class="composer"><p class="small muted" style="margin:0">No allocated assets to raise a request on.</p></div>`;
+  }
+  let body = botMsg(`Hi ${first}! ${mine.length>1?"Which of your assets needs help? I've picked the first one — change it if needed.":"I've selected the asset allocated to you."}`);
+  body += `<div class="msg me"><div class="body"><label class="sr" for="nrAsset">Asset</label>
+      <select id="nrAsset" class="inp assetsel" ${mine.length>1?"":"disabled"}>${mine.map(x=>`<option value="${esc(x.id)}" ${x.id===a.id?"selected":""}>Serial ${esc(serialLabel(x))} · ${esc(x.name)} (${esc(x.id)})</option>`).join("")}</select>
+      <div class="small" style="margin-top:.35rem;opacity:.9">${esc(a.category)}${a.model?" · "+esc(a.model):""} · allocated ${fmtDT(a.allocatedAt)}</div></div></div>`;
+  body += botMsg(`What kind of problem is it with serial <b>${esc(serialLabel(a))}</b>?`);
+  let composer;
+  if (!nr.category){
+    body += `<div class="chips" style="align-self:flex-start">${T_CATS.map(c=>`<button class="chip" data-cat="${esc(c)}">${esc(c)}</button>`).join("")}</div>`;
+    composer = `<p class="small muted" style="margin:0">Choose a problem type above.</p>`;
+  } else {
+    body += meMsg(esc(nr.category), "cat");
+    body += botMsg("Tell us what's happening: when it started, what you've tried, and any error message. A photo helps too.");
+    composer = `<div class="small muted">Raising on <b>${esc(a.name)}</b> · serial <b>${esc(serialLabel(a))}</b></div>
+      <input class="inp" id="nrSubject" placeholder="Short summary (optional), e.g. Screen flickers after waking" value="${esc(nr.subject)}" maxlength="120">
+      <textarea id="nrBody" placeholder="Describe the problem…">${esc(nr.body)}</textarea>
+      <div class="row small"><span class="muted">How urgent?</span>${Object.keys(PRIORITY).map(p=>`<button class="chip${nr.priority===p?" on":""}" data-pri="${p}" title="${p}">${esc(PRI_LABEL[p])}</button>`).join("")}</div>
+      <div class="row">${P.assets?`<label class="btn" style="padding:.35rem .7rem">📎 ${nr.file?esc(nr.file.name.slice(0,28)):"Add photo"}<input type="file" id="nrFile" accept="image/*,application/pdf" class="sr"></label>`:""}
+        <span class="spacer"></span><button class="btn primary" id="nrSend" ${nr.sending?"disabled":""}>${nr.sending?'<span class="spin"></span> Sending…':"Send to IT support"}</button></div>`;
+  }
+  return head+`<div class="tbody" id="thread" data-t="new">${body}</div><div class="composer">${composer}</div>`;
+}
+async function submitRequest(){
+  const nr = S.nr, body = nr.body.trim();
+  if (body.length < 5){ toast("Describe the problem in a few words.", true); $("#nrBody")?.focus(); return; }
+  const a = myHelpAssets().find(x=>x.id===nr.assetId);
+  if (!a){ toast("You can only raise requests on assets allocated to you.", true); return; }
+  nr.sending = true; render();
+  let attachmentId = null;
+  if (nr.file){ try{ attachmentId = (await uploadFile(nr.file)).id; }catch(e){ toast("The photo couldn't be uploaded, so it was left out.", true); } }
+  try{
+    const t = await api("POST", "/api/tickets", {assetId:a.id, category:nr.category, priority:nr.priority, subject:nr.subject.trim(), body, attachmentId});
+    Seen.mark(t.id, t.lastMessageAt); S.nr = null;
+    await refresh(true); toast(`Sent — request ${t.id} is with IT support`); go("support/"+t.id);
+  }catch(e){ nr.sending = false; render(); toast(e.message, true); }
+}
+function msgHTML(m, t){
+  if (m.kind==="system") return `<div class="sys">${esc(m.body)} · ${fmtDT(m.at)}</div>`;
+  const agentSees = can("tickets.manage");
+  if (m.kind==="internal" && !agentSees) return "";
+  const mine = m.by===S.me.id, fromIT = m.by!==t.requesterId;
+  const cls = m.kind==="internal" ? "note" : mine ? "me" : "them";
+  let att = "";
+  if (m.attachment?.id){ const u = "/files/"+encodeURIComponent(m.attachment.id);
+    att = /^image\//.test(m.attachment.type||"") ? `<a href="${u}" target="_blank" rel="noopener"><img src="${u}" alt="${esc(m.attachment.name||"Attachment")}"></a>` : `<a href="${u}" target="_blank" rel="noopener">📎 ${esc(m.attachment.name||"Attachment")}</a>`; }
+  return `<div class="msg ${cls}"><div class="who">${esc(nameOf(m.by))}${fromIT&&m.kind!=="internal"?' <span class="badge">IT support</span>':""}${m.kind==="internal"?" · internal note, only IT sees this":""}</div><div class="body">${esc(m.body)}</div>${att}<div class="when">${fmtDT(m.at)}</div></div>`;
+}
+function threadPane(t){
+  const items = threadItems(t), agent = agentView(t), requester = t.requesterId===S.me.id;
+  const mode = S.replyMode[t.id] || "public", draft = S.drafts[t.id] || "";
+  let composer = "", banner = "";
+  if (t.status==="Closed"){
+    composer = `<p class="small muted" style="margin:0">This request is closed. ${requester?`If the problem comes back, <a href="#/support/new${t.assetId?"/"+esc(t.assetId):""}">start a new request</a>.`:""}</p>`;
+    if (requester && !t.rating) banner = `<div class="banner"><div class="row"><span>How was the help you got?</span><span class="spacer"></span><button class="btn" data-rate="good">👍 Good</button><button class="btn" data-rate="bad">👎 Not good</button></div></div>`;
+  } else if (agent){
+    const def = t.status==="New"||t.status==="Solved" ? "Open" : t.status;
+    composer = `<div class="row" style="gap:.25rem"><button class="chip${mode==="public"?" on":""}" data-mode="public">Reply to employee</button><button class="chip${mode==="internal"?" on":""}" data-mode="internal">Internal note</button>
+        <span class="spacer"></span>${S.features?.ai?`<button class="btn" id="suggestBtn" style="padding:.3rem .65rem">${S.suggest?'<span class="spin"></span> Drafting…':"✨ Suggest reply"}</button>`:""}</div>
+      <textarea id="draft-${esc(t.id)}" placeholder="${mode==="public"?"Write a reply the employee will see…":"Add a note only IT can see…"}">${esc(draft)}</textarea>
+      <div class="row"><label class="small muted" for="submitAs">Set status</label><select class="inp" id="submitAs" style="width:auto">${["Open","Pending","On-hold","Solved"].map(s=>`<option ${s===def?"selected":""}>${s}</option>`).join("")}</select>
+        <span class="small muted hide-sm">${{"Open":"working on it","Pending":"waiting on employee","On-hold":"waiting on vendor/parts","Solved":"fixed"}[def]||""}</span>
+        <span class="spacer"></span><button class="btn primary" id="sendBtn">Send</button></div>`;
+  } else {
+    if (t.status==="Solved" && requester) banner = `<div class="banner"><b>IT marked this as solved.</b> Is your issue sorted?<div class="row" style="margin-top:.5rem"><button class="btn primary" id="yesFixed">Yes, close the request</button><button class="btn" id="notFixed">No, it's still happening</button></div></div>`;
+    composer = `<textarea id="draft-${esc(t.id)}" placeholder="${t.status==="Solved"?"Replying reopens the request…":"Write a message to IT support…"}">${esc(draft)}</textarea>
+      <div class="row">${P.assets?`<label class="btn" style="padding:.35rem .7rem">📎 ${S.att[t.id]?esc(S.att[t.id].name.slice(0,28)):"Attach"}<input type="file" id="attFile" accept="image/*,application/pdf" class="sr"></label>`:""}
+        <span class="spacer"></span><button class="btn primary" id="sendBtn">Send</button></div>`;
+  }
+  return `<div class="thead"><a class="back" href="#/support" aria-label="Back to requests">←</a><div style="min-width:0;flex:1"><b class="ell">${esc(t.subject)}</b>
+      <div class="small muted row" style="gap:.35rem">${esc(t.id)} ${statusPill(t.status)} ${priPill(t.priority)}${t.assetTag?` ${tagHTML(t.assetTag)}`:""}${ticketSerial(t)?` <span>Serial <b>${esc(ticketSerial(t))}</b></span>`:""}${t.assigneeId?` · with ${esc(plainName(t.assigneeId))}`:" · waiting for IT"}</div></div></div>
+    <div class="tbody" id="thread" data-t="${esc(t.id)}">${items.length?items.map(m=>msgHTML(m,t)).join(""):`<div class="sys"><span class="spin"></span></div>`}
+      ${t.status==="New"&&requester?`<div class="sys">We'll reply here. Target response by ${fmtDT(t.dueAt)}.</div>`:""}</div>
+    ${banner}<div class="composer${agent&&mode==="internal"?" internal":""}">${composer}</div>`;
+}
+const ticketSerial = t => t.assetSerial || (t.assetId && S.assets.find(a=>a.id===t.assetId)?.serial) || "";
+function ticketSide(t){
+  const a = t.assetId ? S.assets.find(x=>x.id===t.assetId) : null, agent = can("tickets.manage");
+  const reqOpen = S.tickets.filter(x=>x.requesterId===t.requesterId && isActive(x)).length;
+  const onAsset = a ? S.tickets.filter(x=>x.assetId===a.id && x.id!==t.id).length : 0;
+  const agents = agentIds(); if (t.assigneeId && !agents.includes(t.assigneeId)) agents.push(t.assigneeId);
+  requestProfiles(agents);
+  const mins = (x,y)=>{ const m=Math.round((new Date(y)-new Date(x))/60000); return m<60?m+" min":m<1440?(m/60).toFixed(1)+" h":(m/1440).toFixed(1)+" days"; };
+  return `<div class="sidesec"><h3>Requester</h3><b>${esc(plainName(t.requesterId))}</b><div class="small muted">${reqOpen} open request${reqOpen===1?"":"s"}</div></div>
+  <div class="sidesec"><h3>Asset</h3>${a?`<a href="#/asset/${esc(a.id)}">${tagHTML(a.id)}</a><div style="margin-top:.35rem"><b>${esc(a.name)}</b></div>
+      <dl class="kv small" style="margin-top:.35rem"><dt>Serial</dt><dd><b>${esc(ticketSerial(t)||"—")}</b>${t.assetSerial&&a.serial&&t.assetSerial!==a.serial?` <span class="small muted">(now ${esc(a.serial)})</span>`:""}</dd><dt>Status</dt><dd>${statusPill(a.status)}</dd><dt>With</dt><dd>${esc(a.assignedTo?plainName(a.assignedTo):"In stock")}</dd><dt>Since</dt><dd>${fmtDT(a.allocatedAt)}</dd><dt>History</dt><dd>${onAsset} other request${onAsset===1?"":"s"}</dd></dl>
+      ${agent&&isActive(t)&&!["Retired","Disposed"].includes(a.status)?`<label class="check small" style="margin-top:.5rem"><input type="checkbox" id="repairChk" ${a.status==="Under repair"?"checked":""}> Asset is under repair</label>`:""}`
+    :`<span class="muted small">${esc(t.assetName||"General request")}</span>`}</div>
+  <div class="sidesec"><h3>Request</h3><dl class="kv small"><dt>Type</dt><dd>${esc(t.category||"—")}</dd><dt>Raised</dt><dd>${fmtDT(t.createdAt)}</dd>
+    <dt>Due</dt><dd>${isActive(t)?(isOverdue(t)?`<span class="pill p-bad">Overdue</span> `:"")+fmtDT(t.dueAt):"—"}</dd>
+    ${t.firstResponseAt?`<dt>First reply</dt><dd>${mins(t.createdAt,t.firstResponseAt)}</dd>`:""}
+    ${t.solvedAt?`<dt>Solved in</dt><dd>${mins(t.createdAt,t.solvedAt)}</dd>`:""}
+    ${t.rating?`<dt>Rating</dt><dd>${t.rating==="good"?"👍 Good":"👎 Not good"}</dd>`:""}</dl>
+    ${agent&&t.status!=="Closed"?`<label class="f" style="margin-top:.75rem">Assignee<select class="inp" id="sideAssignee"><option value="">Unassigned</option>${agents.map(u=>`<option value="${esc(u)}" ${u===t.assigneeId?"selected":""}>${esc(nameOf(u))}</option>`).join("")}</select></label>
+      ${t.assigneeId!==S.me.id?`<button class="btn" id="takeIt" style="margin-top:.5rem;width:100%;justify-content:center">Assign to me</button>`:""}
+      <label class="f" style="margin-top:.6rem">Priority<select class="inp" id="sidePri">${Object.keys(PRIORITY).map(p=>`<option ${p===t.priority?"selected":""}>${p}</option>`).join("")}</select></label>`
+    :`<dl class="kv small" style="margin-top:.35rem"><dt>Assignee</dt><dd>${esc(t.assigneeId?plainName(t.assigneeId):"Not yet assigned")}</dd><dt>Priority</dt><dd>${priPill(t.priority)}</dd></dl>`}
+  </div>`;
+}
+async function postSystem(){ /* system messages are written by the server */ }
+async function setAssetRepair(t, on){
+  return act(api("POST", `/api/tickets/${t.id}/repair`, {on}), on ? "Asset marked under repair" : "Asset back in service");
+}
+async function agentSend(t){
+  const body = (S.drafts[t.id]||"").trim(), mode = S.replyMode[t.id]||"public", st = $("#submitAs").value;
+  if (!body && st===t.status){ toast("Write a reply first.", true); return; }
+  if (st==="Solved" && !(body && mode==="public")){ toast("Tell the employee what fixed it before marking it solved.", true); return; }
+  if (st==="Pending" && !(body && mode==="public")){ toast("Ask the employee your question in a reply before setting Pending.", true); return; }
+  $("#sendBtn").disabled = true;
+  const res = await act(api("POST", `/api/tickets/${t.id}/messages`, {body, kind:mode, status:st}),
+    st==="Solved" ? `${t.id} solved — the employee has been asked to confirm` : mode==="internal" ? "Note added" : "Reply sent");
+  if (res){ S.drafts[t.id] = ""; S.scrollToEnd = true; Seen.mark(t.id, res.lastMessageAt); reloadMsgs(t.id); }
+  render();
+}
+async function requesterSend(t){
+  const body = (S.drafts[t.id]||"").trim(), file = S.att[t.id];
+  if (!body && !file){ toast("Write a message first.", true); return; }
+  $("#sendBtn").disabled = true;
+  let attachmentId = null;
+  if (file){ try{ attachmentId = (await uploadFile(file)).id; }catch(e){ toast("The attachment couldn't be uploaded.", true); } }
+  const res = await act(api("POST", `/api/tickets/${t.id}/messages`, {body, kind:"public", attachmentId}));
+  if (res){ S.drafts[t.id] = ""; S.att[t.id] = null; S.scrollToEnd = true; Seen.mark(t.id, res.lastMessageAt); reloadMsgs(t.id); }
+  render();
+}
+async function suggestReply(t){
+  if (S.suggest) return;
+  S.suggest = {abort(){}}; render();
+  try{ const r = await api("POST", `/api/tickets/${t.id}/suggest`, {}); S.drafts[t.id] = r.text; S.replyMode[t.id] = "public"; }
+  catch(e){ toast(e.message, true); }
+  S.suggest = null; render();
+}
+function bindSupport(){
+  $$("[data-view]").forEach(b=>b.onclick=()=>{ S.filters.inboxView=b.dataset.view; render(); });
+  $$("[data-req]").forEach(b=>b.onclick=()=>{ S.filters.reqView=b.dataset.req; render(); });
+  const iq=$("#inboxQ"); if(iq) iq.oninput=()=>{ S.filters.inboxQ=iq.value; render(); };
+  const id = S.route[1];
+  if (id==="new" && S.nr){
+    const na=$("#nrAsset"); if(na) na.onchange=()=>{ S.nr.assetId=na.value; render(); };
+    $$("[data-cat]").forEach(b=>b.onclick=()=>{ S.nr.category=b.dataset.cat; S.scrollToEnd=true; render(); setTimeout(()=>$("#nrBody")?.focus()); });
+    $$("[data-change]").forEach(b=>b.onclick=()=>{ S.nr.category=null; render(); });
+    $$("[data-pri]").forEach(b=>b.onclick=()=>{ S.nr.priority=b.dataset.pri; render(); });
+    const sj=$("#nrSubject"); if(sj) sj.oninput=()=>S.nr.subject=sj.value;
+    const bd=$("#nrBody"); if(bd){ bd.oninput=()=>S.nr.body=bd.value; bd.onkeydown=e=>{ if(e.key==="Enter"&&(e.metaKey||e.ctrlKey)) submitRequest(); }; }
+    const fl=$("#nrFile"); if(fl) fl.onchange=()=>{ S.nr.file=fl.files[0]||null; render(); };
+    const sd=$("#nrSend"); if(sd) sd.onclick=submitRequest;
+    return;
+  }
+  const t = S.tickets.find(x=>x.id===id); if (!t) return;
+  Seen.mark(t.id, agentView(t) ? t.lastMessageAt : t.lastPublicAt);
+  const ta = $("#draft-"+CSS.escape(t.id));
+  if (ta){ ta.oninput=()=>S.drafts[t.id]=ta.value; ta.onkeydown=e=>{ if(e.key==="Enter"&&(e.metaKey||e.ctrlKey)) $("#sendBtn")?.click(); }; }
+  const sb=$("#sendBtn"); if(sb) sb.onclick=()=>agentView(t)?agentSend(t):requesterSend(t);
+  $$("[data-mode]").forEach(b=>b.onclick=()=>{ S.replyMode[t.id]=b.dataset.mode; render(); $("#draft-"+CSS.escape(t.id))?.focus(); });
+  const sg=$("#suggestBtn"); if(sg) sg.onclick=()=>suggestReply(t);
+  const af=$("#attFile"); if(af) af.onchange=()=>{ S.att[t.id]=af.files[0]||null; render(); };
+  const yes=$("#yesFixed"); if(yes) yes.onclick=async()=>{ yes.disabled=true; await act(api("POST",`/api/tickets/${t.id}/confirm`,{fixed:true}),"Request closed. Thanks!"); reloadMsgs(t.id); };
+  const no=$("#notFixed"); if(no) no.onclick=()=>{ const el=$("#draft-"+CSS.escape(t.id)); el.focus(); el.placeholder="What's still happening? Sending this reopens the request."; toast("Tell IT what's still wrong and send — that reopens the request."); };
+  $$("[data-rate]").forEach(b=>b.onclick=async()=>{ await act(api("POST",`/api/tickets/${t.id}/rate`,{rating:b.dataset.rate}),"Thanks for the feedback"); reloadMsgs(t.id); });
+  const asg=$("#sideAssignee"); if(asg) asg.onchange=async()=>{ const to=asg.value||null;
+    await act(api("PATCH",`/api/tickets/${t.id}`, to?{assigneeId:to}:{unassign:true}),"Assignee updated"); reloadMsgs(t.id); };
+  const take=$("#takeIt"); if(take) take.onclick=()=>{ asg.value=S.me.id; asg.onchange(); };
+  const pr=$("#sidePri"); if(pr) pr.onchange=async()=>{ await act(api("PATCH",`/api/tickets/${t.id}`,{priority:pr.value}),"Priority updated"); reloadMsgs(t.id); };
+  const rc=$("#repairChk"); if(rc) rc.onchange=()=>setAssetRepair(t, rc.checked);
+}
+/* ---------- returns & exit clearance ---------- */
+const EXIT_STAGES = ["Asset handover","IT manager review","Finance review","Cleared"];
+const RETURN_STAGES = ["Awaiting handover","Completed"];
+const CLOSED_STAGES = ["Cleared","Completed","Withdrawn"];
+const EXIT_REASONS = ["Resignation","Retirement","End of contract","Termination","Other"];
+const RETURN_REASONS = ["Routine return","No longer needed","Getting a replacement","Faulty or damaged","Moving role or team","Other"];
+const OTHER_ITEMS = ["Employee ID card","Access card","Office keys","Company SIM card"];
+const isOpenR = r => !CLOSED_STAGES.includes(r.stage);
+function visibleReturns(){ return can("exits.viewAll") ? S.returns : S.returns.filter(r=>r.employeeId===S.me.id); }
+function openReturnFor(assetId){ return S.returns.find(r=>isOpenR(r) && (r.items||[]).some(i=>i.assetId===assetId && i.state==="Pending")); }
+function myOpenExit(){ return S.returns.find(r=>r.type==="exit" && r.employeeId===S.me.id && isOpenR(r)); }
+function waitingOnMe(r){
+  if (!isOpenR(r) || r.employeeId===S.me.id) return false; // nobody clears their own return
+  if (r.stage==="Asset handover"||r.stage==="Awaiting handover") return can("returns.receive");
+  if (r.stage==="IT manager review") return can("exits.itApprove");
+  if (r.stage==="Finance review") return can("exits.financeApprove");
+  return false;
+}
+function stagePill(st){ const c={"Asset handover":"p-warn","Awaiting handover":"p-warn","IT manager review":"p-info","Finance review":"p-info","Cleared":"p-ok","Completed":"p-ok","Withdrawn":"p-mute"}[st]||"p-mute"; return `<span class="pill ${c}">${esc(st)}</span>`; }
+function itemState(i){
+  if (i.state==="Pending") return '<span class="pill p-warn">To be handed over</span>';
+  if (i.state==="Missing") return '<span class="pill p-bad">Not returned</span>';
+  return `<span class="pill ${i.condition==="Damaged"?"p-warn":"p-ok"}">Received${i.condition==="Damaged"?" · damaged":""}</span>`;
+}
+function undeclaredFor(r){
+  if (r.type!=="exit" || !isOpenR(r)) return [];
+  const listed = new Set((r.items||[]).map(i=>i.assetId).filter(Boolean));
+  return S.assets.filter(a=>a.assignedTo===r.employeeId && !listed.has(a.id));
+}
+function assetItem(a){ return {key:"a-"+a.id, kind:"asset", assetId:a.id, tag:a.id, name:a.name, serial:a.serial||"", cost:num(a.cost), bookValue:Math.round(bookValue(a)), state:"Pending", condition:"", recovery:0, note:""}; }
+const hist = text => ({at:new Date().toISOString(), by:S.me.id, text});
+const recoveryTotal = r => (r.items||[]).reduce((s,i)=>s+num(i.recovery),0);
+
+function returnFormView(){
+  const mine = S.assets.filter(a=>a.assignedTo===S.me.id && !openReturnFor(a.id));
+  const d = S.retDraft || (S.retDraft = {ids:{}, reason:"Routine return", when:nowLocal(), note:""});
+  if (S.route[2] && !Object.keys(d.ids).length && mine.some(a=>a.id===S.route[2])) d.ids[S.route[2]] = true;
+  return `<p class="small"><a href="#/exits">← Returns & exit clearance</a></p>
+  <div class="pagehead"><div><h1>Return assets to IT</h1><p class="muted" style="margin:0">For routine returns, replacements or anything you no longer need. The assets stay with you until IT records the handover.</p></div></div>
+  ${mine.length?`<form id="retForm" class="grid">
+    <section class="panel"><h2>Which assets?</h2><div class="tablewrap"><table><thead><tr><th>Return</th><th>Asset</th><th>Serial</th><th>Allocated</th></tr></thead><tbody>
+      ${mine.map(a=>`<tr><td><input type="checkbox" name="rid" value="${esc(a.id)}" ${d.ids[a.id]?"checked":""} aria-label="Return ${esc(a.name)}"></td><td>${tagHTML(a.id)} ${esc(a.name)}</td><td>${esc(a.serial||"—")}</td><td>${fmtDT(a.allocatedAt)}</td></tr>`).join("")}
+    </tbody></table></div></section>
+    <section class="panel"><div class="grid g2">
+      <label class="f">Reason<select name="reason">${RETURN_REASONS.map(x=>`<option ${d.reason===x?"selected":""}>${x}</option>`).join("")}</select></label>
+      <label class="f">When will you hand it over?<input type="datetime-local" name="when" value="${esc(d.when)}"></label></div>
+      <label class="f" style="margin-top:.75rem">Note for IT (optional)<textarea name="note" placeholder="e.g. Dropping it at the IT desk, 3rd floor">${esc(d.note)}</textarea></label></section>
+    <div class="row"><span class="spacer"></span><a class="btn" href="#/exits">Cancel</a><button class="btn primary" type="submit">Submit return</button></div></form>`
+  :`<div class="panel empty">You have no assets to return${S.assets.some(a=>a.assignedTo===S.me.id)?" — your assets already have returns in progress":""}.</div>`}`;
+}
+async function submitReturnForm(f){
+  const fd = new FormData(f), d = S.retDraft;
+  d.ids = Object.fromEntries(fd.getAll("rid").map(x=>[x,true])); d.reason = fd.get("reason"); d.when = fd.get("when"); d.note = (fd.get("note")||"").trim();
+  const assetIds = Object.keys(d.ids);
+  if (!assetIds.length){ toast("Tick at least one asset to return.", true); return; }
+  const r = await act(api("POST","/api/returns",{assetIds, reason:d.reason, plannedAt:d.when?toISO(d.when):null, note:d.note}));
+  if (r){ toast(`Return ${r.id} submitted`); S.retDraft = null; go("exits/"+r.id); }
+}
+function exitsView(){
+  const sub = S.route[1];
+  if (sub==="new") return exitFormView();
+  if (sub==="return") return returnFormView();
+  if (sub) return returnDetailView(sub);
+  const list = visibleReturns().slice().sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));
+  const mineOpenExit = myOpenExit();
+  const hasAssets = S.assets.some(a=>a.assignedTo===S.me.id);
+  const staff = can("exits.viewAll");
+  const f = S.filters.exitView || (staff ? "waiting" : "all");
+  const views = staff ? [["waiting","Waiting for me",waitingOnMe],["open","In progress",isOpenR],["done","Closed",r=>!isOpenR(r)],["all","All",()=>true]] : [["all","All",()=>true]];
+  const v = views.find(x=>x[0]===f)||views[0];
+  const rows = list.filter(v[2]);
+  requestProfiles(list.map(r=>r.employeeId));
+  return `<div class="pagehead"><div><h1>Returns & exit clearance</h1><p class="muted" style="margin:0">${staff?"Track assets coming back to the company and sign off leavers before full and final settlement.":"Hand assets back to IT, or complete your exit clearance if you're leaving."}</p></div>
+    <div class="row">${hasAssets&&!mineOpenExit?`<a class="btn primary" href="#/exits/return">Return an asset</a>`:""}${mineOpenExit?`<a class="btn" href="#/exits/${esc(mineOpenExit.id)}">View my exit clearance</a>`:`<a class="btn" href="#/exits/new">I'm leaving the company</a>`}</div></div>
+  ${!staff?`<div class="grid g2" style="margin-bottom:1.25rem">
+    <section class="panel"><h2>Returning assets?</h2><p class="muted small">Routine returns, replacements, or anything you no longer need — no need to be leaving. Pick the assets and when you'll hand them over; IT confirms when they receive them.</p>${hasAssets?`<a class="btn" href="#/exits/return">Return an asset</a>`:""}</section>
+    <section class="panel"><h2>Leaving the company?</h2><p class="muted small">Submit an exit clearance listing the assets you'll hand back. IT receives them, then the IT manager and Finance sign off before your full and final settlement.</p>
+      ${mineOpenExit?`<a href="#/exits/${esc(mineOpenExit.id)}">Your clearance ${esc(mineOpenExit.id)} is at: ${esc(mineOpenExit.stage)}</a>`:hasAssets?"":`<p class="small muted" style="margin:0">You have no allocated assets, but you still need clearance for items like ID and access cards.</p>`}</section></div>`:""}
+  ${staff?`<div class="tabs" role="tablist">${views.map(([k,l,fn])=>`<button role="tab" data-xv="${k}" class="${v[0]===k?"on":""}">${l} (${list.filter(fn).length})</button>`).join("")}</div>`:""}
+  ${rows.length?`<div class="tablewrap"><table><thead><tr><th>Reference</th><th>Type</th><th>Employee</th><th>Items</th><th>Stage</th><th>${staff?"Last working day / raised":"Raised"}</th></tr></thead><tbody>
+    ${rows.map(r=>{ const pend=(r.items||[]).filter(i=>i.state==="Pending").length; return `<tr class="link" data-go="exits/${esc(r.id)}"><td><b>${esc(r.id)}</b>${waitingOnMe(r)?' <span class="pill p-bad">Your action</span>':""}</td><td>${r.type==="exit"?"Exit clearance":"Asset return"}</td><td>${esc(plainName(r.employeeId))}</td>
+      <td>${(r.items||[]).length}${pend?` <span class="small muted">(${pend} pending)</span>`:""}</td><td>${stagePill(r.stage)}</td><td>${r.type==="exit"?fmtDate(r.lastDay):fmtDate(r.createdAt)}</td></tr>`; }).join("")}
+  </tbody></table></div>`:`<div class="panel empty">${staff?(v[0]==="waiting"?"Nothing is waiting for you.":"No returns or exit clearances here."):"You haven't returned any assets or started an exit clearance."}</div>`}`;
+}
+function exitFormView(){
+  const existing = myOpenExit();
+  if (existing) return `<div class="notice">You already have an exit clearance in progress: <a href="#/exits/${esc(existing.id)}">${esc(existing.id)}</a>.</div>`;
+  const mine = S.assets.filter(a=>a.assignedTo===S.me.id);
+  const d = S.exitDraft || (S.exitDraft = {lastDay:"", reason:"Resignation", department:"", personalEmail:"", assets:Object.fromEntries(mine.map(a=>[a.id,true])), other:Object.fromEntries(OTHER_ITEMS.map(x=>[x,false])), otherText:"", note:"", confirm:false});
+  mine.forEach(a=>{ if (!(a.id in d.assets)) d.assets[a.id]=true; });
+  return `<p class="small"><a href="#/exits">← Returns & exit clearance</a></p>
+  <div class="pagehead"><div><h1>Exit clearance</h1><p class="muted" style="margin:0">List everything you'll hand back. After IT receives it, the IT manager and Finance sign off, and your full and final settlement can go ahead.</p></div></div>
+  <div class="steps">${EXIT_STAGES.map((s,i)=>`<span class="${i===0?"now":""}">${i+1}. ${s==="Cleared"?"Cleared for F&F":s}</span>`).join("")}</div>
+  <form id="exitForm" class="grid">
+    <section class="panel"><h2>About your exit</h2><div class="grid g2">
+      <label class="f">Last working day<input type="date" name="lastDay" required value="${esc(d.lastDay)}" min="${todayISO()}"></label>
+      <label class="f">Reason<select name="reason">${EXIT_REASONS.map(x=>`<option ${d.reason===x?"selected":""}>${x}</option>`).join("")}</select></label>
+      <label class="f">Department<input name="department" value="${esc(d.department)}" placeholder="e.g. Sales"></label>
+      <label class="f">Personal email for settlement updates (optional)<input type="email" name="personalEmail" value="${esc(d.personalEmail)}"></label>
+    </div></section>
+    <section class="panel"><h2>Assets you'll return</h2>
+      ${mine.length?`<p class="small muted">These are allocated to you. Untick only if you've already handed it back — IT will follow up on anything not listed.</p>
+      <div class="tablewrap"><table><thead><tr><th>Return</th><th>Asset</th><th>Serial</th><th>Allocated</th></tr></thead><tbody>
+        ${mine.map(a=>`<tr><td><input type="checkbox" name="asset" value="${esc(a.id)}" ${d.assets[a.id]?"checked":""} aria-label="Return ${esc(a.name)}"></td><td>${tagHTML(a.id)} ${esc(a.name)}</td><td>${esc(a.serial||"—")}</td><td>${fmtDT(a.allocatedAt)}</td></tr>`).join("")}
+      </tbody></table></div>`:`<p class="muted" style="margin:0">No assets are allocated to you.</p>`}
+      <h3 style="margin-top:1rem">Other company items</h3>
+      <div class="row" style="gap:1rem">${OTHER_ITEMS.map(x=>`<label class="check"><input type="checkbox" name="other" value="${esc(x)}" ${d.other[x]?"checked":""}> ${esc(x)}</label>`).join("")}</div>
+      <label class="f" style="margin-top:.75rem">Anything else (one per line)<textarea name="otherText" placeholder="e.g. Parking pass">${esc(d.otherText)}</textarea></label>
+    </section>
+    <section class="panel"><label class="f">Notes for IT (optional)<textarea name="note" placeholder="e.g. I can hand everything over on my last day at the Bengaluru office">${esc(d.note)}</textarea></label>
+      <label class="check" style="margin-top:.75rem"><input type="checkbox" name="confirm" ${d.confirm?"checked":""}> I confirm this lists all company property in my possession.</label></section>
+    <div class="row"><span class="spacer"></span><a class="btn" href="#/exits">Cancel</a><button class="btn primary" type="submit">Submit exit clearance</button></div>
+  </form>`;
+}
+function readExitForm(f){
+  const d = S.exitDraft; const fd = new FormData(f);
+  d.lastDay = fd.get("lastDay")||""; d.reason = fd.get("reason"); d.department = (fd.get("department")||"").trim(); d.personalEmail = (fd.get("personalEmail")||"").trim();
+  const on = new Set(fd.getAll("asset")); Object.keys(d.assets).forEach(k=>d.assets[k]=on.has(k));
+  const oth = new Set(fd.getAll("other")); OTHER_ITEMS.forEach(x=>d.other[x]=oth.has(x));
+  d.otherText = fd.get("otherText")||""; d.note = fd.get("note")||""; d.confirm = !!fd.get("confirm");
+}
+async function submitExit(f){
+  readExitForm(f); const d = S.exitDraft;
+  if (!d.lastDay){ toast("Enter your last working day.", true); f.elements.lastDay.focus(); return; }
+  if (!d.confirm){ toast("Confirm that the list is complete.", true); return; }
+  const assetIds = S.assets.filter(a=>a.assignedTo===S.me.id && d.assets[a.id]).map(a=>a.id);
+  const otherItems = [...OTHER_ITEMS.filter(x=>d.other[x]), ...d.otherText.split("\n").map(x=>x.trim()).filter(Boolean)];
+  if (!assetIds.length && !otherItems.length){ toast("List at least one item to return.", true); return; }
+  const r = await act(api("POST","/api/exits",{lastDay:d.lastDay, reason:d.reason, department:d.department, personalEmail:d.personalEmail, assetIds, otherItems, note:d.note.trim(), confirm:true}));
+  if (r){ toast(`Submitted ${r.id}`); S.exitDraft = null; go("exits/"+r.id); }
+}
+function returnRequestDialog(a){ S.retDraft = null; go("exits/return/"+a.id); }
+function returnDetailView(id){
+  const r = S.returns.find(x=>x.id===id);
+  if (!r) return S.loaded.returns ? `<div class="empty">${esc(id)} wasn't found. <a href="#/exits">Back</a></div>` : `<p class="muted"><span class="spin"></span> Loading…</p>`;
+  if (!can("exits.viewAll") && r.employeeId!==S.me.id) return denied();
+  const exit = r.type==="exit", stages = exit ? EXIT_STAGES : RETURN_STAGES, idx = stages.indexOf(r.stage);
+  const self = r.employeeId===S.me.id;
+  const recv = !self && can("returns.receive") && (r.stage==="Asset handover"||r.stage==="Awaiting handover");
+  const und = undeclaredFor(r), pend = (r.items||[]).filter(i=>i.state==="Pending");
+  const rec = recoveryTotal(r), bv = (r.items||[]).reduce((s,i)=>s+num(i.bookValue),0);
+  const it = r.signoffs?.it, fin = r.signoffs?.finance;
+  requestProfiles([r.employeeId, ...(r.history||[]).map(h=>h.by), it?.by, fin?.by].filter(Boolean));
+  const signBlock = (label, s) => s ? `<div class="notice" style="margin:0;border-color:var(--ok);background:var(--ok-bg)"><b>${label} signed off</b> by ${esc(plainName(s.by))} on ${fmtDT(s.at)}${s.comment?`<div class="small" style="margin-top:.25rem;white-space:pre-wrap">${esc(s.comment)}</div>`:""}${s.deduction!=null?`<div class="small">Deduction in F&F: <b>${money(s.deduction)}</b></div>`:""}</div>` : "";
+  return `<p class="small"><a href="#/exits">← Returns & exit clearance</a></p>
+  <div class="pagehead"><div><h1>${esc(r.id)} · ${exit?"Exit clearance":"Asset return"}</h1>
+    <p class="muted" style="margin:0">${esc(plainName(r.employeeId))} · ${stagePill(r.stage)} · ${exit?`last working day ${fmtDate(r.lastDay)} · ${esc(r.reason)}`:esc(r.reason)}</p></div>
+    <div class="row">${r.stage==="Cleared"?`<button class="btn primary" id="certBtn">Download clearance certificate</button>`:""}
+      ${r.employeeId===S.me.id && (r.stage==="Asset handover"||r.stage==="Awaiting handover") && !(r.items||[]).some(i=>i.state!=="Pending")?`<button class="btn danger" id="withdrawBtn">Withdraw</button>`:""}</div></div>
+  ${r.stage!=="Withdrawn"?`<div class="steps">${stages.map((s,i)=>`<span class="${i<idx||r.stage==="Cleared"||r.stage==="Completed"?"done":i===idx?"now":""}">${i+1}. ${s==="Cleared"?"Cleared for F&F":s}</span>`).join("")}</div>`:""}
+  ${und.length?`<div class="notice warn"><b>${und.length} allocated asset${und.length>1?"s aren't":" isn't"} on this list:</b> ${und.map(a=>`${esc(a.id)} ${esc(a.name)} (serial ${esc(a.serial||"—")})`).join(", ")}.
+    ${recv?`<div style="margin-top:.5rem">${und.map(a=>`<button class="btn" data-addasset="${esc(a.id)}" style="padding:.3rem .6rem;margin-right:.35rem">Add ${esc(a.id)}</button>`).join("")}</div>`:" IT will add them to the clearance."}</div>`:""}
+  ${waitingOnMe(r)?`<div class="notice"><b>Your action:</b> ${recv?"record each item as it's handed over.":r.stage==="IT manager review"?"review the handover and sign off, or send it back.":"check recoveries and give the final sign-off for full and final settlement."}</div>`:""}
+  <section style="margin-bottom:1.25rem"><h2>Items</h2><div class="tablewrap"><table><thead><tr><th>Item</th><th>Serial</th><th class="num">Book value</th><th>Status</th><th class="num">Recovery</th><th>Note</th>${recv?"<th></th>":""}</tr></thead><tbody>
+    ${(r.items||[]).map(i=>`<tr><td>${i.kind==="asset"?`<a href="#/asset/${esc(i.assetId)}">${tagHTML(i.tag)}</a> `:""}${esc(i.name)}</td><td>${esc(i.serial||"—")}</td><td class="num">${i.kind==="asset"?money(i.bookValue):"—"}</td><td>${itemState(i)}${i.at?`<div class="small muted">${fmtDT(i.at)} · ${esc(plainName(i.by))}</div>`:""}</td><td class="num">${num(i.recovery)?money(i.recovery):"—"}</td><td class="small" style="white-space:normal;min-width:140px">${esc(i.note||"")}</td>
+      ${recv?`<td><button class="btn" data-recv="${esc(i.key)}" style="padding:.3rem .6rem">${i.state==="Pending"?"Record handover":"Edit"}</button></td>`:""}</tr>`).join("")}
+  </tbody><tfoot><tr><td colspan="2">Total</td><td class="num">${money(bv)}</td><td>${pend.length?pend.length+" pending":"All accounted for"}</td><td class="num">${money(rec)}</td><td colspan="${recv?2:1}"></td></tr></tfoot></table></div></section>
+  ${exit?`<div class="grid g2" style="margin-bottom:1.25rem">
+    <section class="panel"><h2>IT manager sign-off</h2>${signBlock("IT manager", it) || (r.stage==="IT manager review" && can("exits.itApprove") && !self ? `
+      ${und.length?`<p class="small" style="color:var(--bad)">Can't sign off while the employee still holds unlisted assets.</p>`:""}
+      <label class="f">Comment<textarea id="itComment" placeholder="e.g. All devices received and wiped. Accounts disabled."></textarea></label>
+      <div class="row" style="margin-top:.6rem"><button class="btn" id="itBack">Send back to IT asset manager</button><span class="spacer"></span><button class="btn primary" id="itOk" ${und.length?"disabled":""}>Sign off</button></div>`
+      : `<p class="muted small" style="margin:0">${idx<1?"Waiting for all items to be handed over.":"Waiting for the IT manager."}</p>`)}</section>
+    <section class="panel"><h2>Finance sign-off</h2>${signBlock("Finance", fin) || (r.stage==="Finance review" && can("exits.financeApprove") && !self ? `
+      <dl class="kv small" style="margin-bottom:.6rem"><dt>Book value returned</dt><dd>${money((r.items||[]).filter(i=>i.state==="Received"&&i.condition!=="Damaged").reduce((s,i)=>s+num(i.bookValue),0))}</dd><dt>Recovery recorded by IT</dt><dd>${money(rec)}</dd>${outstandingFor(r.employeeId)?`<dt>Unpaid asset purchase balance</dt><dd>${money(outstandingFor(r.employeeId))}</dd>`:""}</dl>
+      <label class="f">Deduction in full and final settlement (${esc(S.config.currency)})<input type="number" id="finDed" min="0" step="1" value="${Math.round(rec+outstandingFor(r.employeeId))}"></label>
+      <label class="f" style="margin-top:.6rem">Comment<textarea id="finComment" placeholder="e.g. Recovery for damaged screen to be deducted from F&F"></textarea></label>
+      <div class="row" style="margin-top:.6rem"><button class="btn" id="finBack">Send back to IT manager</button><span class="spacer"></span><button class="btn primary" id="finOk">Sign off for F&F</button></div>`
+      : `<p class="muted small" style="margin:0">${idx<2?"Comes after the IT manager signs off.":"Waiting for Finance."}</p>`)}</section></div>`:""}
+  ${r.stage==="Cleared"?`<div class="notice" style="border-color:var(--ok);background:var(--ok-bg)"><b>Cleared for full and final settlement.</b> Deduction: ${money(fin?.deduction||0)}. Download the certificate for HR and payroll.</div>`:""}
+  <div class="grid g2">
+    <section class="panel"><h2>Details</h2><dl class="kv"><dt>Employee</dt><dd>${esc(plainName(r.employeeId))}</dd>${r.department?`<dt>Department</dt><dd>${esc(r.department)}</dd>`:""}${r.personalEmail&&can("exits.viewAll")?`<dt>Personal email</dt><dd>${esc(r.personalEmail)}</dd>`:""}<dt>Raised</dt><dd>${fmtDT(r.createdAt)}</dd>${r.plannedAt?`<dt>Planned handover</dt><dd>${fmtDT(r.plannedAt)}</dd>`:""}${r.note?`<dt>Employee note</dt><dd style="white-space:pre-wrap">${esc(r.note)}</dd>`:""}</dl></section>
+    <section class="panel"><h2>History</h2><ul class="tl">${(r.history||[]).slice().reverse().map(h=>`<li><div class="when">${fmtDT(h.at)} · ${esc(plainName(h.by))}</div><div class="body">${esc(h.text)}</div></li>`).join("")}</ul></section>
+  </div>`;
+}
+function receiveDialog(r, key){
+  const i = r.items.find(x=>x.key===key); if (!i) return;
+  const a = i.assetId && S.assets.find(x=>x.id===i.assetId);
+  const bv = a ? Math.round(bookValue(a)) : num(i.bookValue), first = i.state==="Pending";
+  openDialog(`<h2>${first?"Record handover":"Edit"}: ${esc(i.name)}</h2><p class="muted small">${i.assetId?`${esc(i.assetId)} · serial ${esc(i.serial||"—")} · book value ${money(bv)}`:"Company item"}</p>
+    <div class="grid"><label class="f">Outcome<select id="rvCond"><option value="Good" ${i.condition==="Good"?"selected":""}>Received in good condition</option><option value="Damaged" ${i.condition==="Damaged"?"selected":""}>Received damaged</option><option value="Missing" ${i.state==="Missing"?"selected":""}>Not returned</option></select></label>
+    <label class="f">Amount to recover from employee (${esc(S.config.currency)})<input type="number" id="rvRec" min="0" step="1" value="${num(i.recovery)||""}" placeholder="0"></label>
+    <label class="f">Note<input id="rvNote" value="${esc(i.note||"")}" placeholder="e.g. charger missing, screen cracked"></label></div>
+    ${!first&&i.assetId?`<p class="small muted">The asset has already been taken back; changing the outcome here updates the record only.</p>`:""}
+    <div class="row" style="margin-top:1rem;justify-content:flex-end"><button class="btn" data-close>Cancel</button><button class="btn primary" id="rvOk">Save</button></div>`, dlg=>{
+    const cond=$("#rvCond",dlg), rec=$("#rvRec",dlg);
+    cond.onchange=()=>{ if(cond.value==="Missing" && !num(rec.value)) rec.value = i.assetId ? bv : ""; if(cond.value==="Good") rec.value=""; };
+    $("#rvOk",dlg).onclick = async ()=>{
+      $("#rvOk",dlg).disabled = true;
+      const ok = await act(api("POST",`/api/returns/${r.id}/items/${encodeURIComponent(key)}/receive`,{condition:cond.value, recovery:num(rec.value), note:$("#rvNote",dlg).value.trim()}),"Saved");
+      if (ok) dlg.close(); else $("#rvOk",dlg).disabled = false;
+    };
+  });
+}
+function certificate(r){ downloadUrl(`/api/returns/${encodeURIComponent(r.id)}/certificate`); }
+function bindExits(){
+  $$("[data-xv]").forEach(b=>b.onclick=()=>{ S.filters.exitView=b.dataset.xv; render(); });
+  $$("tr[data-go]").forEach(tr=>tr.onclick=()=>go(tr.dataset.go));
+  const rf = $("#retForm");
+  if (rf){ rf.onsubmit = e=>{ e.preventDefault(); submitReturnForm(rf); }; rf.addEventListener("change",()=>{ const fd=new FormData(rf); S.retDraft.ids=Object.fromEntries(fd.getAll("rid").map(x=>[x,true])); S.retDraft.reason=fd.get("reason"); S.retDraft.when=fd.get("when"); S.retDraft.note=fd.get("note")||""; }); return; }
+  const f = $("#exitForm");
+  if (f){ f.addEventListener("input",()=>readExitForm(f)); f.addEventListener("change",()=>readExitForm(f)); f.onsubmit=e=>{ e.preventDefault(); submitExit(f); }; return; }
+  const r = S.returns.find(x=>x.id===S.route[1]); if (!r) return;
+  $$("[data-recv]").forEach(b=>b.onclick=()=>receiveDialog(r, b.dataset.recv));
+  $$("[data-addasset]").forEach(b=>b.onclick=()=>act(api("POST",`/api/returns/${r.id}/add-asset`,{assetId:b.dataset.addasset}),`Added ${b.dataset.addasset}`));
+  const wd=$("#withdrawBtn"); if(wd) wd.onclick=()=>openDialog(`<h2>Withdraw ${esc(r.id)}?</h2><p>Nothing has been handed over yet. Your assets stay allocated to you.</p><div class="row" style="justify-content:flex-end"><button class="btn" data-close>Keep it</button><button class="btn danger" id="wdOk">Withdraw</button></div>`, d=>{
+    $("#wdOk",d).onclick=async()=>{ if (await act(api("POST",`/api/returns/${r.id}/withdraw`),"Withdrawn")) d.close(); }; });
+  const sign = async (who, ok) => {
+    if (who==="it"){
+      const c = $("#itComment").value.trim();
+      if (!ok && !c){ toast("Say what needs fixing before sending it back.", true); $("#itComment").focus(); return; }
+      await act(api("POST",`/api/returns/${r.id}/it-signoff`,{approve:ok, comment:c}), ok?"Signed off — sent to Finance":"Sent back to the IT asset manager");
+    } else {
+      const c = $("#finComment").value.trim(), ded = Math.max(0, num($("#finDed").value));
+      if (!ok && !c){ toast("Say what needs fixing before sending it back.", true); $("#finComment").focus(); return; }
+      await act(api("POST",`/api/returns/${r.id}/finance-signoff`,{approve:ok, comment:c, deduction:ded}), ok?"Cleared for full and final settlement":"Sent back to the IT manager");
+    }
+  };
+  const io=$("#itOk"); if(io) io.onclick=()=>sign("it",true);
+  const ib=$("#itBack"); if(ib) ib.onclick=()=>sign("it",false);
+  const fo=$("#finOk"); if(fo) fo.onclick=()=>sign("fin",true);
+  const fb=$("#finBack"); if(fb) fb.onclick=()=>sign("fin",false);
+  const cb=$("#certBtn"); if(cb) cb.onclick=()=>certificate(r);
+}
+/* ---------- asset history report (by serial) ---------- */
+const nowLocal = () => { const d = new Date(); d.setSeconds(0,0); return new Date(d - d.getTimezoneOffset()*60000).toISOString().slice(0,16); };
+const toISO = v => v ? new Date(v).toISOString() : new Date().toISOString();
+function durationText(from, until){
+  const ms = new Date(until||Date.now()) - new Date(from); if (!(ms>0)) return "—";
+  const d = Math.floor(ms/864e5); if (d>=60) return Math.round(d/30.44)+" months"; if (d>=1) return d+" day"+(d>1?"s":""); const h=Math.round(ms/36e5); return h+" h";
+}
+function assetEvents(a){
+  const ev = [], allocs = a.allocations||[];
+  if (a.purchaseDate) ev.push({at:a.purchaseDate, type:"Purchased", text:`Bought${a.vendor?" from "+a.vendor:""}${a.invoiceNumber?", invoice "+a.invoiceNumber:""} for ${money(a.cost)}`});
+  if (a.createdAt) ev.push({at:a.createdAt, type:"Registered", text:a.source==="invoice-ocr"?"Added to the register from an invoice":"Added to the register", by:a.createdBy});
+  if (a.inServiceDate && a.inServiceDate!==a.purchaseDate) ev.push({at:a.inServiceDate, type:"In service", text:"Put into service; depreciation starts"});
+  allocs.forEach(x=>{
+    ev.push({at:x.from, type:"Allocated", text:`Allocated to ${plainName(x.to)}${x.note?" — "+x.note:""}`, by:x.by});
+    if (x.until && x.returnCondition!=="Sold to employee") ev.push({at:x.until, type:"Returned", text:`${x.returnCondition==="Reallocated"?"Moved from":"Returned by"} ${plainName(x.to)}${x.returnCondition&&x.returnCondition!=="Reallocated"?" — "+x.returnCondition:""}${x.returnNote?" · "+x.returnNote:""}`});
+  });
+  (a.log||[]).forEach(l=>{
+    if (allocs.length && /^(Allocated to|Returned by)/.test(l.text)) return; // already shown from allocation records
+    if (/^Created/.test(l.text) || (/^Sold to/.test(l.text) && S.sales.some(x=>x.assetId===a.id))) return;
+    ev.push({at:l.at, type:/^Signed for/.test(l.text)?"Signed for":/repair|Back in service/i.test(l.text)?"Repair":/^Sold/.test(l.text)?"Sold":"Updated", text:l.text, by:l.by});
+  });
+  S.tickets.filter(t=>t.assetId===a.id).forEach(t=>{
+    ev.push({at:t.createdAt, type:"Support request", text:`${t.id} raised: ${t.subject} (${t.priority})`, by:t.requesterId, link:"support/"+t.id});
+    if (t.solvedAt) ev.push({at:t.solvedAt, type:"Solved", text:`${t.id} solved${t.resolution?": "+t.resolution:""}`, by:t.assigneeId, link:"support/"+t.id});
+  });
+  S.returns.forEach(r=>(r.items||[]).filter(i=>i.assetId===a.id).forEach(i=>{
+    ev.push({at:r.createdAt, type:r.type==="exit"?"Exit clearance":"Return requested", text:`${r.id} by ${plainName(r.employeeId)}${r.reason?" — "+r.reason:""}`, by:r.employeeId, link:"exits/"+r.id});
+    if (i.at) ev.push({at:i.at, type:"Handover recorded", text:`${r.id}: ${i.state==="Missing"?"not returned":"received "+(i.condition||"").toLowerCase()}${num(i.recovery)?", recovery "+money(i.recovery):""}${i.note?" · "+i.note:""}`, by:i.by, link:"exits/"+r.id});
+  }));
+  S.sales.filter(s=>s.assetId===a.id).forEach(s=>{
+    ev.push({at:s.createdAt, type:"Sale offered", text:`${s.id}: offered to ${plainName(s.employeeId)} for ${money(s.price)} over ${s.instalments} month${s.instalments>1?"s":""}`, by:s.createdBy, link:"sales/"+s.id});
+    if (s.stage==="Sold") ev.push({at:s.soldAt, type:"Sold", text:`${s.id}: sold to ${plainName(s.employeeId)} for ${money(s.price)}, recovered from salary`, by:s.employeeId, link:"sales/"+s.id});
+  });
+  return ev.filter(e=>e.at).sort((x,y)=>String(new Date(x.at).toISOString()).localeCompare(new Date(y.at).toISOString()));
+}
+function historyView(){
+  const q = (S.filters.histQ||"").trim(), ql = q.toLowerCase();
+  const a = S.route[1] ? S.assets.find(x=>x.id===S.route[1]) : null;
+  const matches = q ? S.assets.filter(x=>(x.serial||"").toLowerCase().includes(ql) || x.id.toLowerCase().includes(ql) || (x.name||"").toLowerCase().includes(ql)).slice(0,30) : [];
+  const head = `<div class="pagehead"><div><h1>Asset history</h1><p class="muted" style="margin:0">Everything that has happened to an asset, found by its serial number.</p></div></div>
+    <form id="histForm" class="row" style="margin-bottom:1.25rem"><input class="inp" id="histQ" list="serials" placeholder="Enter or pick a serial number" value="${esc(q)}" style="max-width:340px" autocomplete="off">
+      <datalist id="serials">${S.assets.filter(x=>x.serial).map(x=>`<option value="${esc(x.serial)}">${esc(x.name)} · ${esc(x.id)}</option>`).join("")}</datalist>
+      <button class="btn primary" type="submit">Show history</button></form>`;
+  if (!a){
+    if (!q) return head+`<div class="panel empty">Type a serial number to see its full history: purchase, every allocation and return with date and time, support requests, repairs and sale.</div>`;
+    return head+(matches.length?`<div class="tablewrap"><table><thead><tr><th>Serial</th><th>Asset</th><th>Status</th><th>With</th></tr></thead><tbody>${matches.map(x=>`<tr class="link" data-go="history/${esc(x.id)}"><td><b>${esc(x.serial||"—")}</b></td><td>${tagHTML(x.id)} ${esc(x.name)}</td><td>${statusPill(x.status)}</td><td>${x.assignedTo?esc(plainName(x.assignedTo)):'<span class="muted">—</span>'}</td></tr>`).join("")}</tbody></table></div>`
+      :`<div class="panel empty">No asset has a serial number matching “${esc(q)}”.</div>`);
+  }
+  const ev = assetEvents(a), allocs = (a.allocations||[]).slice();
+  if (!allocs.length && a.assignedTo) allocs.push({to:a.assignedTo, from:a.allocatedAt});
+  requestProfiles([...allocs.map(x=>x.to), ...ev.map(e=>e.by)].filter(Boolean));
+  const ts = S.tickets.filter(t=>t.assetId===a.id), sale = S.sales.find(s=>s.assetId===a.id && s.stage==="Sold");
+  const daysHeld = allocs.reduce((s,x)=>s+Math.max(0,(new Date(x.until||Date.now())-new Date(x.from))/864e5),0);
+  return head+`<div class="pagehead" style="margin-bottom:1rem"><div><div style="margin-bottom:.4rem">${tagHTML(a.id,true)}</div><h2 style="font-size:1.35rem;margin:0">Serial ${esc(a.serial||"—")} · ${esc(a.name)}</h2>
+      <p class="muted" style="margin:.2rem 0 0">${esc(a.category)}${a.model?" · "+esc(a.model):""} · ${statusPill(a.status)}${a.assignedTo?` · with ${esc(plainName(a.assignedTo))} since ${fmtDT(a.allocatedAt)}`:""}</p></div>
+    <div class="row"><a class="btn" href="#/asset/${esc(a.id)}">Open asset</a><button class="btn" id="histCsv">Export CSV</button></div></div>
+  <div class="figs"><div><b>${money(a.cost)}</b><span>Cost · ${fmtDate(a.purchaseDate)}</span></div><div><b>${sale?money(sale.price):money(bookValue(a))}</b><span>${sale?"Sold for":"Book value today"}</span></div>
+    <div><b>${allocs.length}</b><span>Allocations · ${Math.round(daysHeld)} days in use</span></div><div><b>${ts.length}</b><span>Support requests · ${ts.filter(t=>t.solvedAt).length} solved</span></div></div>
+  <section style="margin-bottom:1.5rem"><h2>Custody</h2>${allocs.length?`<div class="tablewrap"><table><thead><tr><th>Employee</th><th>Allocated (date & time)</th><th>Returned (date & time)</th><th>Held for</th><th>Outcome</th></tr></thead><tbody>
+    ${allocs.map(x=>`<tr><td><b>${esc(plainName(x.to))}</b></td><td>${fmtDT(x.from)}</td><td>${x.until?fmtDT(x.until):'<span class="pill p-ok">Current</span>'}</td><td>${durationText(x.from,x.until)}</td><td>${esc(x.returnCondition||"—")}${x.returnNote?`<div class="small muted">${esc(x.returnNote)}</div>`:""}</td></tr>`).join("")}</tbody></table></div>`:`<div class="panel empty">Never allocated.</div>`}</section>
+  <section><h2>Timeline</h2><div class="tablewrap"><table><thead><tr><th>Date & time</th><th>Event</th><th>Details</th><th>By</th></tr></thead><tbody>
+    ${ev.map(e=>`<tr${e.link?` class="link" data-go="${esc(e.link)}"`:""}><td>${fmtDT(e.at)}</td><td><b>${esc(e.type)}</b></td><td style="white-space:normal;min-width:260px">${esc(e.text)}</td><td>${e.by?esc(plainName(e.by)):'<span class="muted">—</span>'}</td></tr>`).join("")||`<tr><td colspan="4" class="empty">No events recorded.</td></tr>`}
+  </tbody></table></div></section>`;
+}
+function bindHistory(){
+  const f = $("#histForm"), q = $("#histQ");
+  if (f) f.onsubmit = e=>{ e.preventDefault(); S.filters.histQ = q.value.trim();
+    const exact = S.assets.filter(x=>(x.serial||"").toLowerCase()===S.filters.histQ.toLowerCase());
+    go(exact.length===1 ? "history/"+exact[0].id : "history"); if (exact.length!==1) render(); };
+  if (q) q.onchange = ()=>{ const x = S.assets.find(y=>(y.serial||"")===q.value.trim()); if (x){ S.filters.histQ = q.value.trim(); go("history/"+x.id); } };
+  $$("tr[data-go]").forEach(tr=>tr.onclick=()=>go(tr.dataset.go));
+  const c = $("#histCsv"); if (c) c.onclick = ()=>{ const a = S.assets.find(x=>x.id===S.route[1]);
+    const rows = [["Serial","Tag","Asset","Date & time","Event","Details","By"]];
+    assetEvents(a).forEach(e=>rows.push([a.serial||"",a.id,a.name,new Date(e.at).toLocaleString(),e.type,e.text,e.by?plainName(e.by):""]));
+    downloadCSV(`asset-history-${(a.serial||a.id).replace(/[^\w-]/g,"")}.csv`, rows); };
+}
+
+/* ---------- sale of assets to employees + salary deductions ---------- */
+const SALE_STAGES = ["Finance approval","Employee acceptance","Sold"];
+const saleOpen = s => SALE_STAGES.slice(0,2).includes(s.stage);
+const salesStaff = () => can("sales.create") || can("sales.approve") || can("sales.view");
+function visibleSales(){ return salesStaff() ? S.sales : S.sales.filter(s=>s.employeeId===S.me.id); }
+function saleWaitingOnMe(s){
+  if (s.stage==="Finance approval") return can("sales.approve") && s.createdBy!==S.me.id && s.employeeId!==S.me.id;
+  if (s.stage==="Employee acceptance") return s.employeeId===S.me.id;
+  return false;
+}
+const monthKey = d => { const x = new Date(d); return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0"); };
+const monthLabel = m => m ? new Date(m+"-01T00:00:00").toLocaleDateString(undefined,{month:"long",year:"numeric"}) : "—";
+function addMonths(m, n){ const [y,mo] = m.split("-").map(Number); const d = new Date(y, mo-1+n, 1); return monthKey(d); }
+function buildSchedule(price, n, start){
+  price = Math.round(num(price)*100)/100; n = Math.max(1, Math.round(num(n)||1));
+  const per = Math.floor(price/n*100)/100;
+  return Array.from({length:n},(_,i)=>({no:i+1, month:addMonths(start,i), amount: i===n-1 ? Math.round((price-per*(n-1))*100)/100 : per, status:"Scheduled"}));
+}
+function outstandingFor(emp){
+  return S.sales.filter(s=>s.employeeId===emp && s.stage==="Sold").reduce((t,s)=>t+(s.schedule||[]).filter(i=>i.status==="Scheduled").reduce((a,i)=>a+num(i.amount),0),0);
+}
+const saleStagePill = st => `<span class="pill ${{"Finance approval":"p-info","Employee acceptance":"p-warn","Sold":"p-ok","Declined":"p-mute","Rejected":"p-mute","Cancelled":"p-mute"}[st]||"p-mute"}">${esc(st)}</span>`;
+function salesView(){
+  const sub = S.route[1];
+  if (sub==="new") return can("sales.create") ? saleFormView() : denied();
+  if (sub==="payroll") return (can("payroll.view")||can("sales.approve")) ? payrollView() : denied();
+  if (sub) return saleDetailView(sub);
+  const staff = salesStaff(), list = visibleSales().slice().sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));
+  const views = staff ? [["waiting","Waiting for me",saleWaitingOnMe],["open","In progress",saleOpen],["sold","Sold",s=>s.stage==="Sold"],["all","All",()=>true]] : [["all","All",()=>true]];
+  const v = views.find(x=>x[0]===(S.filters.saleView||(staff?"waiting":"all"))) || views[0];
+  const rows = list.filter(v[2]); requestProfiles(list.map(s=>s.employeeId));
+  return `<div class="pagehead"><div><h1>${staff?"Asset sales to employees":"My asset purchases"}</h1><p class="muted" style="margin:0">${staff?"Sell company assets to employees at an agreed price, recovered from salary in monthly instalments.":"Company assets offered to you for purchase, and your salary deduction schedule."}</p></div>
+    <div class="row">${can("payroll.view")||can("sales.approve")?`<a class="btn" href="#/sales/payroll">Salary deductions for payroll</a>`:""}${can("sales.create")?`<a class="btn primary" href="#/sales/new">Sell an asset</a>`:""}</div></div>
+  ${staff?`<div class="tabs" role="tablist">${views.map(([k,l,fn])=>`<button role="tab" data-sv="${k}" class="${v[0]===k?"on":""}">${l} (${list.filter(fn).length})</button>`).join("")}</div>`:""}
+  ${rows.length?`<div class="tablewrap"><table><thead><tr><th>Reference</th><th>Asset</th><th>Serial</th><th>Employee</th><th class="num">Price</th><th>Instalments</th><th>Stage</th><th class="num">Balance</th></tr></thead><tbody>
+    ${rows.map(s=>{ const bal=(s.schedule||[]).filter(i=>i.status==="Scheduled").reduce((a,i)=>a+num(i.amount),0);
+      return `<tr class="link" data-go="sales/${esc(s.id)}"><td><b>${esc(s.id)}</b>${saleWaitingOnMe(s)?' <span class="pill p-bad">Your action</span>':""}</td><td>${tagHTML(s.tag)} ${esc(s.name)}</td><td>${esc(s.serial||"—")}</td><td>${esc(plainName(s.employeeId))}</td><td class="num">${money(s.price)}</td><td>${s.instalments} × ~${money(s.price/s.instalments)} from ${monthLabel(s.startMonth)}</td><td>${saleStagePill(s.stage)}</td><td class="num">${s.stage==="Sold"?money(bal):"—"}</td></tr>`; }).join("")}
+  </tbody></table></div>`:`<div class="panel empty">${staff?(v[0]==="waiting"?"Nothing is waiting for you.":"No sales yet."):"No assets have been offered to you."}</div>`}`;
+}
+function saleFormView(){
+  const pre = S.route[2];
+  const sellable = S.assets.filter(a=>!["Sold","Disposed"].includes(a.status) && !S.sales.some(s=>s.assetId===a.id && saleOpen(s)));
+  if (!sellable.length) return `<p class="small"><a href="#/sales">← Sales</a></p><div class="panel empty">No assets can be sold right now.</div>`;
+  const d = S.saleDraft && S.saleDraft.assetId && sellable.some(a=>a.id===S.saleDraft.assetId) ? S.saleDraft : null;
+  const a0 = sellable.find(a=>a.id===(d?.assetId||pre)) || sellable.find(a=>a.assignedTo) || sellable[0];
+  if (!d){ S.saleDraft = {assetId:a0.id, price:Math.round(bookValue(a0)), instalments:3, startMonth:addMonths(monthKey(new Date()),1), note:""}; if (a0.assignedTo) S.pick.salePerson = {id:a0.assignedTo, text:plainName(a0.assignedTo)}; else S.pick.salePerson = {}; }
+  const sd = S.saleDraft, a = S.assets.find(x=>x.id===sd.assetId), bv = bookValue(a), gain = num(sd.price)-bv;
+  const sched = buildSchedule(sd.price, sd.instalments, sd.startMonth);
+  return `<p class="small"><a href="#/sales">← Sales</a></p>
+  <div class="pagehead"><div><h1>Sell an asset to an employee</h1><p class="muted" style="margin:0">${can("sales.approve")?"As Finance, your offer goes straight to the employee to accept.":"Finance approves the price, then the employee accepts and authorises salary deductions."}</p></div></div>
+  <form id="saleForm" class="grid">
+    <section class="panel"><h2>Asset and buyer</h2><div class="grid g2">
+      <label class="f">Asset<select class="inp" id="sfAsset">${sellable.map(x=>`<option value="${esc(x.id)}" ${x.id===a.id?"selected":""}>Serial ${esc(x.serial||"—")} · ${esc(x.name)} (${esc(x.id)})${x.assignedTo?" — with "+esc(plainName(x.assignedTo)):""}</option>`).join("")}</select></label>
+      ${pickerHTML("salePerson","Employee buying it")}
+    </div><dl class="kv small" style="margin-top:.75rem"><dt>Cost</dt><dd>${money(a.cost)} (${fmtDate(a.purchaseDate)})</dd><dt>Book value today</dt><dd><b>${money(bv)}</b></dd><dt>Status</dt><dd>${statusPill(a.status)}${a.assignedTo?" · with "+esc(plainName(a.assignedTo)):""}</dd></dl></section>
+    <section class="panel"><h2>Price and salary recovery</h2><div class="grid g3">
+      <label class="f">Sale price (${esc(S.config.currency)})<input type="number" id="sfPrice" min="0" step="1" value="${esc(sd.price)}"></label>
+      <label class="f">Monthly instalments<select class="inp" id="sfInst">${[1,2,3,4,6,9,12,18,24].map(n=>`<option ${+sd.instalments===n?"selected":""}>${n}</option>`).join("")}</select></label>
+      <label class="f">First salary deduction<input type="month" id="sfStart" value="${esc(sd.startMonth)}" min="${monthKey(new Date())}"></label>
+    </div>
+    <p class="small" style="margin:.75rem 0">${gain>=0?`Gain on sale <b>${money(gain)}</b>`:`Loss on sale <b>${money(-gain)}</b>`} against book value.</p>
+    <div class="tablewrap"><table><thead><tr><th>#</th><th>Salary month</th><th class="num">Deduction</th></tr></thead><tbody>${sched.map(i=>`<tr><td>${i.no}</td><td>${monthLabel(i.month)}</td><td class="num">${money(i.amount)}</td></tr>`).join("")}</tbody></table></div>
+    <label class="f" style="margin-top:.75rem">Note (optional)<input id="sfNote" value="${esc(sd.note)}" placeholder="e.g. Laptop refresh — employee opted to keep old device"></label></section>
+    <div class="row"><span class="spacer"></span><a class="btn" href="#/sales">Cancel</a><button class="btn primary" type="submit">${can("sales.approve")?"Send offer to employee":"Send to Finance for approval"}</button></div>
+  </form>`;
+}
+function bindSaleForm(){
+  const f = $("#saleForm"); if (!f) return;
+  bindPicker("salePerson");
+  const sd = S.saleDraft;
+  $("#sfAsset").onchange = e=>{ const a=S.assets.find(x=>x.id===e.target.value); sd.assetId=a.id; sd.price=Math.round(bookValue(a)); S.pick.salePerson = a.assignedTo?{id:a.assignedTo,text:plainName(a.assignedTo)}:{}; render(); };
+  $("#sfPrice").onchange = e=>{ sd.price=Math.max(0,num(e.target.value)); render(); };
+  $("#sfInst").onchange = e=>{ sd.instalments=+e.target.value; render(); };
+  $("#sfStart").onchange = e=>{ if(e.target.value){ sd.startMonth=e.target.value; render(); } };
+  $("#sfNote").oninput = e=>sd.note=e.target.value;
+  f.onsubmit = async e=>{ e.preventDefault();
+    const emp = S.pick.salePerson?.id;
+    if (!emp){ toast("Pick the employee buying the asset.", true); $("#salePerson-q").focus(); return; }
+    if (emp===S.me.id){ toast("You can't create a sale to yourself.", true); return; }
+    if (!(num(sd.price)>0)){ toast("Enter a sale price above zero.", true); return; }
+    const s = await act(api("POST","/api/sales",{assetId:sd.assetId, employeeId:emp, price:num(sd.price), instalments:+sd.instalments, startMonth:sd.startMonth, note:sd.note.trim()}));
+    if (s){ toast(s.stage==="Employee acceptance"?`Offer ${s.id} sent to ${plainName(emp)}`:`${s.id} sent to Finance`); S.saleDraft=null; S.pick.salePerson={}; go("sales/"+s.id); }
+  };
+}
+function saleDetailView(id){
+  const s = S.sales.find(x=>x.id===id);
+  if (!s) return S.loaded.sales ? `<div class="empty">${esc(id)} wasn't found. <a href="#/sales">Back</a></div>` : `<p class="muted"><span class="spin"></span> Loading…</p>`;
+  if (!salesStaff() && s.employeeId!==S.me.id) return denied();
+  const a = S.assets.find(x=>x.id===s.assetId), idx = SALE_STAGES.indexOf(s.stage), buyer = s.employeeId===S.me.id;
+  const paid = (s.schedule||[]).filter(i=>i.status!=="Scheduled").reduce((t,i)=>t+num(i.amount),0);
+  requestProfiles([s.employeeId, s.createdBy, s.financeApproval?.by, ...(s.history||[]).map(h=>h.by)].filter(Boolean));
+  const gain = num(s.price) - num(s.bookValueAtSale ?? s.bookValueAtOffer);
+  return `<p class="small"><a href="#/sales">← Sales</a></p>
+  <div class="pagehead"><div><h1>${esc(s.id)} · ${esc(s.name)}</h1><p class="muted" style="margin:0">Serial ${esc(s.serial||"—")} · ${esc(plainName(s.employeeId))} · ${saleStagePill(s.stage)}</p></div>
+    <div class="row">${saleOpen(s) && (s.createdBy===S.me.id || can("sales.approve")) && !buyer?`<button class="btn danger" id="saleCancel">Cancel offer</button>`:""}</div></div>
+  ${idx>=0?`<div class="steps">${SALE_STAGES.map((st,i)=>`<span class="${i<idx||s.stage==="Sold"?"done":i===idx?"now":""}">${i+1}. ${st}</span>`).join("")}</div>`:""}
+  <div class="grid g2" style="margin-bottom:1.25rem">
+    <section class="panel"><h2>Terms</h2><dl class="kv">
+      <dt>Asset</dt><dd><a href="#/asset/${esc(s.assetId)}">${tagHTML(s.tag)}</a> ${esc(s.name)}</dd><dt>Serial</dt><dd>${esc(s.serial||"—")}</dd>
+      <dt>Buyer</dt><dd>${esc(plainName(s.employeeId))}</dd><dt>Sale price</dt><dd><b>${money(s.price)}</b></dd>
+      ${salesStaff()?`<dt>Original cost</dt><dd>${money(s.costAtOffer)}</dd><dt>Book value</dt><dd>${money(s.bookValueAtSale ?? s.bookValueAtOffer)}${s.stage==="Sold"?" at sale":" when offered"}</dd><dt>${gain>=0?"Gain":"Loss"} on sale</dt><dd>${money(Math.abs(gain))}</dd>`:""}
+      <dt>Recovery</dt><dd>${s.instalments} monthly salary deduction${s.instalments>1?"s":""} from ${monthLabel(s.startMonth)}</dd>
+      ${s.note?`<dt>Note</dt><dd>${esc(s.note)}</dd>`:""}
+      ${s.stage==="Sold"?`<dt>Recovered</dt><dd>${money(paid)} of ${money(s.price)}</dd>`:""}</dl></section>
+    <section class="panel"><h2>Salary deduction schedule</h2><div class="tablewrap"><table><thead><tr><th>#</th><th>Salary month</th><th class="num">Amount</th><th>Status</th></tr></thead><tbody>
+      ${(s.schedule||[]).map(i=>`<tr><td>${i.no}</td><td>${monthLabel(i.month)}</td><td class="num">${money(i.amount)}</td><td>${s.stage!=="Sold"?'<span class="muted small">After acceptance</span>':`<span class="pill ${i.status==="Scheduled"?"p-info":"p-ok"}">${esc(i.status)}</span>${i.at?`<div class="small muted">${fmtDate(i.at)}</div>`:""}`}</td></tr>`).join("")}
+    </tbody></table></div></section></div>
+  ${s.stage==="Finance approval"?`<section class="panel" style="margin-bottom:1.25rem"><h2>Finance approval</h2>${saleWaitingOnMe(s)?`
+    <label class="f">Comment<textarea id="saleFinComment" placeholder="e.g. Price agreed at book value"></textarea></label>
+    <div class="row" style="margin-top:.6rem"><button class="btn" id="saleReject">Reject</button><span class="spacer"></span><button class="btn primary" id="saleApprove">Approve and send to employee</button></div>`
+    :`<p class="muted small" style="margin:0">Waiting for Finance to approve the price and schedule.</p>`}</section>`:""}
+  ${s.stage==="Employee acceptance"?`<section class="panel" style="margin-bottom:1.25rem"><h2>Employee acceptance</h2>${buyer?`
+    <p>You're being offered <b>${esc(s.name)}</b> (serial ${esc(s.serial||"—")}) for <b>${money(s.price)}</b>, recovered from your salary in ${s.instalments} monthly instalment${s.instalments>1?"s":""} starting ${monthLabel(s.startMonth)}. The asset is sold as is, and becomes yours when you accept.</p>
+    <label class="check"><input type="checkbox" id="saleConsent"> I authorise the company to deduct these amounts from my salary, and any unpaid balance from my full and final settlement if I leave.</label>
+    <label class="f" style="margin-top:.6rem">Type your full name to accept<input id="saleSign" autocomplete="name"></label>
+    <div class="row" style="margin-top:.6rem"><button class="btn" id="saleDecline">Decline</button><span class="spacer"></span><button class="btn primary" id="saleAccept">Accept and buy</button></div>`
+    :`<p class="muted small" style="margin:0">Waiting for ${esc(plainName(s.employeeId))} to accept.${s.financeApproval?` Approved by ${esc(plainName(s.financeApproval.by))} on ${fmtDT(s.financeApproval.at)}.`:""}</p>`}</section>`:""}
+  ${s.stage==="Sold"?`<div class="notice" style="border-color:var(--ok);background:var(--ok-bg)">Sold on ${fmtDT(s.soldAt)}. Accepted by <b>${esc(s.acceptance?.name||plainName(s.employeeId))}</b>${s.financeApproval?`, approved by ${esc(plainName(s.financeApproval.by))}`:""}. The asset has been removed from the company's books.</div>`:""}
+  <section class="panel"><h2>History</h2><ul class="tl">${(s.history||[]).slice().reverse().map(h=>`<li><div class="when">${fmtDT(h.at)} · ${esc(plainName(h.by))}</div><div class="body">${esc(h.text)}</div></li>`).join("")}</ul></section>`;
+}
+async function completeSale(s, signName){
+  return act(api("POST",`/api/sales/${s.id}/accept`,{accept:true, consent:true, name:signName}), `You've bought ${s.name}`);
+}
+function bindSales(){
+  $$("[data-sv]").forEach(b=>b.onclick=()=>{ S.filters.saleView=b.dataset.sv; render(); });
+  $$("tr[data-go]").forEach(tr=>tr.onclick=()=>go(tr.dataset.go));
+  if (S.route[1]==="new") return bindSaleForm();
+  if (S.route[1]==="payroll") return bindPayroll();
+  const s = S.sales.find(x=>x.id===S.route[1]); if (!s) return;
+  const ap=$("#saleApprove"); if(ap) ap.onclick=()=>act(api("POST",`/api/sales/${s.id}/approve`,{approve:true, comment:$("#saleFinComment").value.trim()}),"Approved — sent to the employee");
+  const rj=$("#saleReject"); if(rj) rj.onclick=()=>{ const c=$("#saleFinComment").value.trim(); if(!c){ toast("Give a reason for rejecting.",true); $("#saleFinComment").focus(); return; }
+    act(api("POST",`/api/sales/${s.id}/approve`,{approve:false, comment:c}),"Rejected"); };
+  const ac=$("#saleAccept"); if(ac) ac.onclick=async()=>{ const n=$("#saleSign").value.trim();
+    if(!$("#saleConsent").checked){ toast("Tick the box to authorise salary deductions.",true); return; }
+    if(n.length<2){ toast("Type your full name to accept.",true); $("#saleSign").focus(); return; }
+    ac.disabled=true; if(!(await completeSale(s,n))) ac.disabled=false; };
+  const dc=$("#saleDecline"); if(dc) dc.onclick=()=>act(api("POST",`/api/sales/${s.id}/accept`,{accept:false}),"Offer declined");
+  const cn=$("#saleCancel"); if(cn) cn.onclick=()=>act(api("POST",`/api/sales/${s.id}/cancel`),"Offer cancelled");
+}
+function payrollLines(month){
+  const lines = [];
+  S.sales.filter(s=>s.stage==="Sold").forEach(s=>(s.schedule||[]).forEach((i,ix)=>{ if (i.month===month) lines.push({kind:"sale", ref:s.id, ix, employeeId:s.employeeId,
+    what:`Asset purchase — ${s.name}, serial ${s.serial||"—"} (instalment ${i.no} of ${s.instalments})`, amount:num(i.amount), status:i.status, link:"sales/"+s.id}); }));
+  S.returns.filter(r=>r.type==="exit" && r.stage==="Cleared" && num(r.signoffs?.finance?.deduction)>0 && r.lastDay && r.lastDay.slice(0,7)===month).forEach(r=>lines.push({kind:"exit", ref:r.id, employeeId:r.employeeId,
+    what:`Full and final settlement deduction — exit clearance ${r.id}`, amount:num(r.signoffs.finance.deduction), status:r.ffStatus||"Scheduled", link:"exits/"+r.id}));
+  return lines.sort((a,b)=>plainName(a.employeeId).localeCompare(plainName(b.employeeId)));
+}
+function payrollView(){
+  const m = S.filters.payMonth || (S.filters.payMonth = monthKey(new Date()));
+  const lines = payrollLines(m); requestProfiles(lines.map(l=>l.employeeId));
+  const total = lines.reduce((t,l)=>t+l.amount,0), pending = lines.filter(l=>l.status==="Scheduled");
+  const byEmp = {}; lines.forEach(l=>{ byEmp[l.employeeId]=(byEmp[l.employeeId]||0)+l.amount; });
+  const fin = can("sales.approve");
+  return `<p class="small"><a href="#/sales">← Sales</a></p>
+  <div class="pagehead"><div><h1>Salary deductions</h1><p class="muted" style="margin:0">Payroll input: what to deduct from each employee's salary for the month.</p></div>
+    <div class="row"><input type="month" class="inp" id="payMonth" value="${esc(m)}" style="width:auto"><button class="btn" id="payCsv" ${lines.length?"":"disabled"}>Export for payroll (CSV)</button>${fin&&pending.length?`<button class="btn primary" id="payAll">Mark all ${pending.length} as deducted</button>`:""}</div></div>
+  <div class="figs f3"><div><b>${money(total)}</b><span>Total for ${monthLabel(m)}</span></div><div><b>${Object.keys(byEmp).length}</b><span>Employees</span></div><div><b>${pending.length}</b><span>Not yet deducted</span></div></div>
+  ${lines.length?`<div class="tablewrap"><table><thead><tr><th>Employee</th><th>Reference</th><th>Deduction for</th><th class="num">Amount</th><th>Status</th>${fin?"<th></th>":""}</tr></thead><tbody>
+    ${lines.map((l,k)=>`<tr><td><b>${esc(plainName(l.employeeId))}</b></td><td><a href="#/${esc(l.link)}">${esc(l.ref)}</a></td><td style="white-space:normal;min-width:240px">${esc(l.what)}</td><td class="num">${money(l.amount)}</td><td><span class="pill ${l.status==="Scheduled"?"p-info":"p-ok"}">${esc(l.status)}</span></td>
+      ${fin?`<td>${l.status==="Scheduled"?`<button class="btn" data-pay="${k}" style="padding:.3rem .6rem">Mark deducted</button>`:""}</td>`:""}</tr>`).join("")}
+  </tbody><tfoot><tr><td colspan="3">Total</td><td class="num">${money(total)}</td><td colspan="${fin?2:1}"></td></tr></tfoot></table></div>`
+  :`<div class="panel empty">No salary deductions for ${monthLabel(m)}.</div>`}`;
+}
+async function markDeducted(lines){
+  return api("POST","/api/payroll/deduct",{lines:lines.map(l=>({kind:l.kind, ref:l.ref, no:l.kind==="sale"?l.ix+1:null}))});
+}
+function bindPayroll(){
+  const m=$("#payMonth"); if(m) m.onchange=()=>{ if(m.value){ S.filters.payMonth=m.value; render(); } };
+  const lines = payrollLines(S.filters.payMonth);
+  $$("[data-pay]").forEach(b=>b.onclick=async()=>{ b.disabled=true; await act(markDeducted([lines[+b.dataset.pay]]),"Marked as deducted"); });
+  const all=$("#payAll"); if(all) all.onclick=async()=>{ all.disabled=true; await act(markDeducted(lines.filter(l=>l.status==="Scheduled")),"All marked as deducted"); };
+  const c=$("#payCsv"); if(c) c.onclick=()=>downloadUrl(`/api/payroll.csv?month=${encodeURIComponent(S.filters.payMonth)}`);
+}
+/* ---------- depreciation report ---------- */
+function reportView(){
+  const cy=currentFYStart(); if(S.reportFY==null) S.reportFY=cy;
+  const {start,end}=fyRange(S.reportFY), endIncl=new Date(end-1);
+  const rows=S.assets.filter(a=>startOf(a)<end).map(a=>{ const o=accumAt(a,start), c=accumAt(a,end)-o; return {a,open:o,charge:c,close:o+c,nbv:num(a.cost)-o-c}; });
+  const tot=rows.reduce((s,r)=>({cost:s.cost+num(r.a.cost),open:s.open+r.open,charge:s.charge+r.charge,close:s.close+r.close,nbv:s.nbv+r.nbv}),{cost:0,open:0,charge:0,close:0,nbv:0});
+  const byCat={}; rows.forEach(r=>{ const k=r.a.category||"Other"; byCat[k]=byCat[k]||{cost:0,charge:0,nbv:0,n:0}; byCat[k].cost+=num(r.a.cost); byCat[k].charge+=r.charge; byCat[k].nbv+=r.nbv; byCat[k].n++; });
+  const years=[]; for(let y=cy-5;y<=cy+2;y++) years.push(y);
+  return `<div class="pagehead"><div><h1>Depreciation report</h1><p class="muted" style="margin:0">${fmtDate(start)} to ${fmtDate(endIncl)}, calculated monthly from each asset's in-service date.</p></div>
+    <div class="row"><select class="inp" id="fySel" style="width:auto">${years.map(y=>`<option value="${y}" ${y===S.reportFY?"selected":""}>${fyLabel(y)}</option>`).join("")}</select><button class="btn" id="repCsv">Export CSV</button></div></div>
+  <div class="figs"><div><b>${money(tot.cost)}</b><span>Gross block</span></div><div><b>${money(tot.charge)}</b><span>Charge for the year</span></div><div><b>${money(tot.close)}</b><span>Accumulated at year end</span></div><div><b>${money(tot.nbv)}</b><span>Net block at year end</span></div></div>
+  <h2>By category</h2><div class="tablewrap" style="margin-bottom:1.5rem"><table><thead><tr><th>Category</th><th class="num">Assets</th><th class="num">Cost</th><th class="num">Charge</th><th class="num">Net block</th></tr></thead><tbody>
+    ${Object.entries(byCat).sort((a,b)=>b[1].cost-a[1].cost).map(([k,v])=>`<tr><td>${esc(k)}</td><td class="num">${v.n}</td><td class="num">${money(v.cost)}</td><td class="num">${money(v.charge)}</td><td class="num">${money(v.nbv)}</td></tr>`).join("")||`<tr><td colspan="5" class="empty">No assets in service during this year.</td></tr>`}
+  </tbody></table></div>
+  <h2>By asset</h2><div class="tablewrap"><table><thead><tr><th>Tag</th><th>Asset</th><th>Method</th><th class="num">Cost</th><th class="num">Opening accumulated</th><th class="num">Charge</th><th class="num">Closing accumulated</th><th class="num">Net block</th></tr></thead><tbody>
+    ${rows.map(r=>`<tr class="link" data-go="asset/${esc(r.a.id)}"><td>${esc(r.a.id)}</td><td>${esc(r.a.name)}</td><td class="small">${esc(METHODS[r.a.method]||"")}</td><td class="num">${money(r.a.cost)}</td><td class="num">${money(r.open)}</td><td class="num">${money(r.charge)}</td><td class="num">${money(r.close)}</td><td class="num">${money(r.nbv)}</td></tr>`).join("")}
+  </tbody>${rows.length?`<tfoot><tr><td colspan="3">Total</td><td class="num">${money(tot.cost)}</td><td class="num">${money(tot.open)}</td><td class="num">${money(tot.charge)}</td><td class="num">${money(tot.close)}</td><td class="num">${money(tot.nbv)}</td></tr></tfoot>`:""}</table></div>`;
+}
+function bindReport(){
+  const fy=$("#fySel"); if(fy) fy.onchange=()=>{ S.reportFY=+fy.value; render(); };
+  $$("tr[data-go]").forEach(tr=>tr.onclick=()=>go(tr.dataset.go));
+  const c=$("#repCsv"); if(c) c.onclick=()=>{ const {start,end}=fyRange(S.reportFY);
+    const rows=[["Tag","Asset","Category","Method","In service","Cost","Opening accumulated","Charge","Closing accumulated","Net block"]];
+    S.assets.filter(a=>startOf(a)<end).forEach(a=>{ const o=accumAt(a,start), ch=accumAt(a,end)-o; rows.push([a.id,a.name,a.category,METHODS[a.method],a.inServiceDate,num(a.cost),o.toFixed(2),ch.toFixed(2),(o+ch).toFixed(2),(num(a.cost)-o-ch).toFixed(2)]); });
+    downloadCSV(`depreciation-${fyLabel(S.reportFY).replace(/\s|–/g,"-")}.csv`, rows); };
+}
+
+/* ---------- people & roles ---------- */
+function peopleView(){
+  const rows = S.people.slice().sort((a,b)=>String(b.signedInAt||"").localeCompare(String(a.signedInAt||"")));
+  return `<div class="pagehead"><div><h1>People & roles</h1><p class="muted" style="margin:0">Everyone who has signed in, or been added by IT. Roles apply immediately.</p></div></div>
+  <div class="grid g2" style="margin-bottom:1rem">${ROLES.map(r=>`<div class="panel" style="padding:.75rem 1rem"><b>${r}</b><div class="small muted">${ROLE_NOTE[r]}</div></div>`).join("")}</div>
+  <div class="tablewrap"><table><thead><tr><th>Person</th><th>Signed in with</th><th>Last sign-in</th><th>Assets</th><th>Role</th></tr></thead><tbody>
+  ${rows.map(m=>`<tr><td><b>${esc(nameOf(m.id))}</b><div class="small muted">${esc(m.email)}</div></td>
+    <td>${PROVIDERS[m.provider]?`<span class="row" style="gap:.4rem">${PROVIDERS[m.provider].logo}${esc(PROVIDERS[m.provider].short)}</span>`:m.provider==="dev"?"Developer login":'<span class="muted">Not yet</span>'}</td>
+    <td>${m.signedInAt?ago(m.signedInAt):"—"}</td><td>${S.assets.filter(a=>a.assignedTo===m.id).length}</td>
+    <td><select class="inp role-sel" data-u="${esc(m.id)}" style="width:auto">${ROLES.map(r=>`<option ${m.role===r?"selected":""}>${r}</option>`).join("")}</select>${m.isOwner?' <span class="small muted">bootstrap admin — keeps People & settings</span>':m.explicitRole?"":' <span class="small muted">default</span>'}</td></tr>`).join("")}
+  </tbody></table></div>`;
+}
+function bindPeople(){
+  $$(".role-sel").forEach(s=>s.onchange=()=>act(api("PUT",`/api/people/${s.dataset.u}/role`,{role:s.value}),`Role set to ${s.value}`));
+}
+/* ---------- settings ---------- */
+function settingsView(){
+  const c=S.config;
+  const provBlock=(k,extra)=>`<section class="panel"><div class="row" style="margin-bottom:.75rem">${PROVIDERS[k].logo}<h2 style="margin:0">${PROVIDERS[k].name}</h2><span class="spacer"></span><label class="check"><input type="checkbox" name="${k}.enabled" ${c[k]?.enabled!==false?"checked":""}> Allow sign-in</label></div>
+    <div class="grid g2"><label class="f">Allowed email domain<input name="${k}.domain" value="${esc(c[k]?.domain||"")}" placeholder="${k==="google"?"example.com":"contoso.com"}"></label>
+    <label class="f">Default role for new people<select name="${k}.defaultRole">${ROLES.map(r=>`<option ${c[k]?.defaultRole===r?"selected":""}>${r}</option>`).join("")}</select></label>${extra||""}</div></section>`;
+  return `<div class="pagehead"><div><h1>Sign-in & settings</h1><p class="muted" style="margin:0">Control which directories people sign in with and how the register is calculated.</p></div></div>
+  <div class="notice">Client IDs and secrets for Microsoft Entra ID and Google live in the server's <code>.env</code> file, not here. A provider only appears on the sign-in page when it's configured there and allowed below.</div>
+  <form id="setForm" class="grid">
+    ${provBlock("microsoft",`<label class="f">Tenant ID (for reference)<input name="microsoft.tenantId" value="${esc(c.microsoft?.tenantId||"")}" placeholder="00000000-0000-0000-0000-000000000000"></label>
+      <label class="f" style="grid-column:1/-1">Entra ID group → role (one per line, applied at first sign-in to people without a role)<textarea name="microsoft.groupRoles" placeholder="3f1c…-group-object-id = IT Support">${esc(c.microsoft?.groupRoles||"")}</textarea></label>`)}
+    ${provBlock("google")}
+    <section class="panel"><h2>Register</h2><div class="grid g3">
+      <label class="f">Currency<select name="currency">${["INR","USD","EUR","GBP","AED","SGD","AUD","JPY"].map(x=>`<option ${c.currency===x?"selected":""}>${x}</option>`).join("")}</select></label>
+      <label class="f">Financial year starts<select name="fyStartMonth">${Array.from({length:12},(_,i)=>`<option value="${i+1}" ${+c.fyStartMonth===i+1?"selected":""}>${new Date(2000,i,1).toLocaleString(undefined,{month:"long"})}</option>`).join("")}</select></label>
+      <label class="f">Default depreciation method<select name="defaultMethod">${Object.entries(METHODS).map(([k,v])=>`<option value="${k}" ${c.defaultMethod===k?"selected":""}>${v}</option>`).join("")}</select></label>
+    </div></section>
+    <div class="row"><span class="spacer"></span><button class="btn primary" type="submit">Save settings</button></div>
+  </form>`;
+}
+function bindSettings(){
+  const f=$("#setForm"); if(!f) return;
+  f.onsubmit=async ev=>{ ev.preventDefault();
+    const c=structuredClone(S.config); c.microsoft={...c.microsoft,enabled:false}; c.google={...c.google,enabled:false};
+    new FormData(f).forEach((v,k)=>{ const [a,b]=k.split("."); if(b){ c[a][b]= b==="enabled"?true:b==="groupRoles"?String(v):String(v).trim().replace(/^@/,""); } else c[a]= a==="fyStartMonth"?+v:v; });
+    if(!c.microsoft.enabled && !c.google.enabled){ toast("Keep at least one sign-in provider enabled.",true); return; }
+    await act(api("PUT","/api/config",c),"Settings saved");
+  };
+}
+/* ============ boot ============ */
+async function boot(){
+  parseRoute();
+  try{ await refresh(true); }
+  catch(e){ if (e.status===401) return showSignIn(); $("#root").innerHTML = `<div class="signin"><div class="card"><h1>Can't load Asset Desk</h1><p class="muted">${esc(e.message)}</p><button class="btn" onclick="location.reload()">Try again</button></div></div>`; return; }
+  if (location.search.includes("signin_error")) history.replaceState(null, "", location.pathname+location.hash);
+  setInterval(()=>{ if (document.visibilityState==="visible" && S.session) refresh().catch(()=>{}); }, 15000);
+  document.addEventListener("visibilitychange", ()=>{ if (document.visibilityState==="visible" && S.session) refresh().catch(()=>{}); });
+}
+boot();
+</script>
+</body>
+</html>
