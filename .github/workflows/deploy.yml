@@ -142,7 +142,7 @@ jobs:
             "echo 'SSH authentication successful'"
 
           echo "========================================"
-          echo "Preparing Asset Desk directory"
+          echo "Preparing Asset Desk"
           echo "========================================"
 
           ssh \
@@ -152,16 +152,16 @@ jobs:
             "$DEPLOY_USER@$DEPLOY_HOST" << 'REMOTE'
           set -e
 
-          if [ ! -d /opt/asset-desk ]; then
-            mkdir -p /opt/asset-desk
-            echo "Created /opt/asset-desk"
-          else
-            echo "/opt/asset-desk already exists"
+          APP_DIR="/opt/asset-desk"
+
+          if [ ! -d "$APP_DIR" ]; then
+            mkdir -p "$APP_DIR"
+            echo "Created $APP_DIR"
           fi
 
-          cd /opt/asset-desk
+          cd "$APP_DIR"
 
-          if [ ! -d .git ]; then
+          if [ ! -d ".git" ]; then
             echo "Cloning Asset Desk repository..."
 
             git clone \
@@ -169,7 +169,8 @@ jobs:
               .
 
           else
-            echo "Repository already exists"
+            echo "Updating existing repository..."
+
             git fetch origin
             git reset --hard origin/main
           fi
@@ -177,16 +178,109 @@ jobs:
           echo "Current commit:"
           git rev-parse --short HEAD
 
-          echo "Repository deployment files:"
-          ls -la
+          echo "========================================"
+          echo "Creating production environment"
+          echo "========================================"
 
-          echo "Backend:"
-          ls -la backend || true
+          mkdir -p backend
 
-          echo "Database:"
-          ls -la database || true
+          if [ ! -f backend/.env ]; then
+
+            SECRET_KEY=$(openssl rand -hex 32)
+
+            DB_PASSWORD=$(openssl rand -hex 24)
+
+            DB_ROOT_PASSWORD=$(openssl rand -hex 24)
+
+            cat > backend/.env <<EOF
+          DATABASE_URL=mysql+pymysql://assetdesk:${DB_PASSWORD}@db:3306/assetdesk?charset=utf8mb4
+          SECRET_KEY=${SECRET_KEY}
+          BASE_URL=https://assetdesk.nexdaequmsupport.com
+          ADMIN_EMAILS=alok.jayant@aequmindia.in
+          UPLOAD_DIR=/data/uploads
+          DEV_LOGIN=false
+          COOKIE_SECURE=true
+          MS_TENANT_ID=
+          MS_CLIENT_ID=
+          MS_CLIENT_SECRET=
+          GOOGLE_CLIENT_ID=
+          GOOGLE_CLIENT_SECRET=
+          ANTHROPIC_API_KEY=
+          ANTHROPIC_MODEL=claude-sonnet-5-5
+          EOF
+
+            chmod 600 backend/.env
+
+            cat > .assetdesk-db.env <<EOF
+          DB_PASSWORD=${DB_PASSWORD}
+          DB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+          EOF
+
+            chmod 600 .assetdesk-db.env
+
+            echo "Production environment created."
+
+          else
+
+            echo "Production backend/.env already exists."
+            echo "Keeping existing production secrets."
+
+          fi
+
+          echo "========================================"
+          echo "Production configuration"
+          echo "========================================"
+
+          if [ -f backend/.env ]; then
+            echo "backend/.env exists"
+            echo "SECRET_KEY: configured"
+            echo "ADMIN_EMAILS: configured"
+            echo "DEV_LOGIN: configured"
+            echo "COOKIE_SECURE: configured"
+          else
+            echo "ERROR: backend/.env was not created"
+            exit 1
+          fi
+
+          echo "========================================"
+          echo "Starting Asset Desk"
+          echo "========================================"
+
+          set -a
+          . ./.assetdesk-db.env
+          set +a
+
+          docker compose up -d --build
+
+          echo "========================================"
+          echo "Container status"
+          echo "========================================"
+
+          docker compose ps
+
+          echo "========================================"
+          echo "Waiting for Asset Desk"
+          echo "========================================"
+
+          for i in $(seq 1 30); do
+
+            if curl -fsS http://127.0.0.1:8000/ >/dev/null 2>&1; then
+              echo "Asset Desk application is responding."
+              break
+            fi
+
+            echo "Waiting for Asset Desk..."
+            sleep 3
+
+          done
+
+          echo "========================================"
+          echo "Final container status"
+          echo "========================================"
+
+          docker compose ps
+
+          echo "========================================"
+          echo "Asset Desk deployment completed"
+          echo "========================================"
           REMOTE
-
-          echo "========================================"
-          echo "Repository deployed successfully"
-          echo "========================================"
