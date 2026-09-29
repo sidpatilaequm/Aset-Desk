@@ -209,7 +209,7 @@ jobs:
           ANTHROPIC_MODEL=claude-sonnet-5-5
           EOF
 
-            chmod 600 backend/.env
+            chmod 644 backend/.env
 
             cat > .assetdesk-db.env <<EOF
           DB_PASSWORD=${DB_PASSWORD}
