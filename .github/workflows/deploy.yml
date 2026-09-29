@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-
   workflow_dispatch:
 
 jobs:
@@ -48,11 +47,13 @@ jobs:
               echo "Application is ready"
               exit 0
             fi
+
             echo "Waiting for application..."
             sleep 3
           done
 
           echo "Application did not become ready"
+          docker compose ps
           docker compose logs
           exit 1
 
@@ -64,6 +65,7 @@ jobs:
       - name: Show logs on failure
         if: failure()
         run: |
+          docker compose ps
           docker compose logs
 
       - name: Stop CI stack
@@ -80,31 +82,92 @@ jobs:
       - name: Deploy through SSH
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+
         run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
+          set -e
 
-          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
+          echo "========================================"
+          echo "Checking deployment configuration"
+          echo "========================================"
 
-          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+          if [ -z "$DEPLOY_HOST" ]; then
+            echo "ERROR: DEPLOY_HOST is empty"
+            exit 1
+          fi
 
-          ssh -i ~/.ssh/deploy_key \
-            "$DEPLOY_USER@$DEPLOY_HOST" << 'EOF'
+          if [ -z "$DEPLOY_PORT" ]; then
+            echo "ERROR: DEPLOY_PORT is empty"
+            exit 1
+          fi
 
-            set -e
+          if [ -z "$DEPLOY_USER" ]; then
+            echo "ERROR: DEPLOY_USER is empty"
+            exit 1
+          fi
 
-            cd /opt/asset-desk
+          if [ -z "$DEPLOY_SSH_KEY" ]; then
+            echo "ERROR: DEPLOY_SSH_KEY is empty"
+            exit 1
+          fi
 
-            echo "Pulling latest code..."
-            git pull origin main
+          echo "DEPLOY_HOST: $DEPLOY_HOST"
+          echo "DEPLOY_PORT: $DEPLOY_PORT"
+          echo "DEPLOY_USER: $DEPLOY_USER"
+          echo "SSH key: present"
 
-            echo "Rebuilding Asset Desk..."
-            docker compose up -d --build
+          echo "========================================"
+          echo "Preparing SSH"
+          echo "========================================"
 
-            echo "Deployment status:"
-            docker compose ps
+          mkdir -p "$HOME/.ssh"
+          chmod 700 "$HOME/.ssh"
 
-            EOF
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$HOME/.ssh/deploy_key"
+          chmod 600 "$HOME/.ssh/deploy_key"
+
+          echo "SSH key written successfully"
+
+          echo "========================================"
+          echo "Adding server to known_hosts"
+          echo "========================================"
+
+          ssh-keyscan \
+            -p "$DEPLOY_PORT" \
+            -H "$DEPLOY_HOST" \
+            >> "$HOME/.ssh/known_hosts"
+
+          chmod 644 "$HOME/.ssh/known_hosts"
+
+          echo "Server host key added"
+
+          echo "========================================"
+          echo "Testing SSH authentication"
+          echo "========================================"
+
+          ssh \
+            -p "$DEPLOY_PORT" \
+            -i "$HOME/.ssh/deploy_key" \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "echo 'SSH authentication successful'"
+
+          echo "========================================"
+          echo "SSH connection successful"
+          echo "========================================"
+
+          echo "Checking Asset Desk directory..."
+
+          ssh \
+            -p "$DEPLOY_PORT" \
+            -i "$HOME/.ssh/deploy_key" \
+            -o IdentitiesOnly=yes \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "if [ -d /opt/asset-desk ]; then echo '/opt/asset-desk exists'; else echo '/opt/asset-desk does not exist yet'; fi"
+
+          echo "========================================"
+          echo "Deployment stage reached successfully"
+          echo "========================================"
