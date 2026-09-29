@@ -1,0 +1,110 @@
+name: Asset Desk CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Test Asset Desk
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create CI environment
+        run: |
+          cat > backend/.env <<'EOF'
+          DATABASE_URL=mysql+pymysql://assetdesk:ci-password@db:3306/assetdesk?charset=utf8mb4
+          SECRET_KEY=ci-test-secret-key
+          BASE_URL=http://localhost:8000
+          ADMIN_EMAILS=admin@acme.test
+          UPLOAD_DIR=/data/uploads
+          DEV_LOGIN=true
+          COOKIE_SECURE=false
+          MS_TENANT_ID=
+          MS_CLIENT_ID=
+          MS_CLIENT_SECRET=
+          GOOGLE_CLIENT_ID=
+          GOOGLE_CLIENT_SECRET=
+          ANTHROPIC_API_KEY=
+          ANTHROPIC_MODEL=claude-sonnet-5-5
+          EOF
+
+      - name: Start CI stack
+        run: |
+          DB_PASSWORD=ci-password \
+          DB_ROOT_PASSWORD=ci-root-password \
+          docker compose up -d --build
+
+      - name: Wait for application
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://localhost:8000/ >/dev/null 2>&1; then
+              echo "Application is ready"
+              exit 0
+            fi
+            echo "Waiting for application..."
+            sleep 3
+          done
+
+          echo "Application did not become ready"
+          docker compose logs
+          exit 1
+
+      - name: Run smoke tests
+        run: |
+          docker compose exec -T app \
+            python tests/smoke_test.py
+
+      - name: Show logs on failure
+        if: failure()
+        run: |
+          docker compose logs
+
+      - name: Stop CI stack
+        if: always()
+        run: |
+          docker compose down -v
+
+  deploy:
+    name: Deploy to Hosticare VPS
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy through SSH
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+          ssh -i ~/.ssh/deploy_key \
+            "$DEPLOY_USER@$DEPLOY_HOST" << 'EOF'
+
+            set -e
+
+            cd /opt/asset-desk
+
+            echo "Pulling latest code..."
+            git pull origin main
+
+            echo "Rebuilding Asset Desk..."
+            docker compose up -d --build
+
+            echo "Deployment status:"
+            docker compose ps
+
+            EOF
