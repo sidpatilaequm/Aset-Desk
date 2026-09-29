@@ -1,0 +1,5 @@
+backend/.env
+backend/uploads/
+.git
+__pycache__/
+*.pyc
