@@ -74,12 +74,15 @@ jobs:
           docker compose down -v
 
   deploy:
-    name: Deploy to Hosticare VPS
+    name: Deploy Asset Desk
     needs: test
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy through SSH
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy Asset Desk to VPS
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
@@ -93,46 +96,31 @@ jobs:
           echo "Checking deployment configuration"
           echo "========================================"
 
-          if [ -z "$DEPLOY_HOST" ]; then
+          test -n "$DEPLOY_HOST" || {
             echo "ERROR: DEPLOY_HOST is empty"
             exit 1
-          fi
+          }
 
-          if [ -z "$DEPLOY_PORT" ]; then
+          test -n "$DEPLOY_PORT" || {
             echo "ERROR: DEPLOY_PORT is empty"
             exit 1
-          fi
+          }
 
-          if [ -z "$DEPLOY_USER" ]; then
+          test -n "$DEPLOY_USER" || {
             echo "ERROR: DEPLOY_USER is empty"
             exit 1
-          fi
+          }
 
-          if [ -z "$DEPLOY_SSH_KEY" ]; then
+          test -n "$DEPLOY_SSH_KEY" || {
             echo "ERROR: DEPLOY_SSH_KEY is empty"
             exit 1
-          fi
-
-          echo "DEPLOY_HOST: $DEPLOY_HOST"
-          echo "DEPLOY_PORT: $DEPLOY_PORT"
-          echo "DEPLOY_USER: $DEPLOY_USER"
-          echo "SSH key: present"
-
-          echo "========================================"
-          echo "Preparing SSH"
-          echo "========================================"
+          }
 
           mkdir -p "$HOME/.ssh"
           chmod 700 "$HOME/.ssh"
 
           printf '%s\n' "$DEPLOY_SSH_KEY" > "$HOME/.ssh/deploy_key"
           chmod 600 "$HOME/.ssh/deploy_key"
-
-          echo "SSH key written successfully"
-
-          echo "========================================"
-          echo "Adding server to known_hosts"
-          echo "========================================"
 
           ssh-keyscan \
             -p "$DEPLOY_PORT" \
@@ -141,10 +129,8 @@ jobs:
 
           chmod 644 "$HOME/.ssh/known_hosts"
 
-          echo "Server host key added"
-
           echo "========================================"
-          echo "Testing SSH authentication"
+          echo "Testing SSH"
           echo "========================================"
 
           ssh \
@@ -156,18 +142,51 @@ jobs:
             "echo 'SSH authentication successful'"
 
           echo "========================================"
-          echo "SSH connection successful"
+          echo "Preparing Asset Desk directory"
           echo "========================================"
-
-          echo "Checking Asset Desk directory..."
 
           ssh \
             -p "$DEPLOY_PORT" \
             -i "$HOME/.ssh/deploy_key" \
             -o IdentitiesOnly=yes \
-            "$DEPLOY_USER@$DEPLOY_HOST" \
-            "if [ -d /opt/asset-desk ]; then echo '/opt/asset-desk exists'; else echo '/opt/asset-desk does not exist yet'; fi"
+            "$DEPLOY_USER@$DEPLOY_HOST" << 'REMOTE'
+          set -e
+
+          if [ ! -d /opt/asset-desk ]; then
+            mkdir -p /opt/asset-desk
+            echo "Created /opt/asset-desk"
+          else
+            echo "/opt/asset-desk already exists"
+          fi
+
+          cd /opt/asset-desk
+
+          if [ ! -d .git ]; then
+            echo "Cloning Asset Desk repository..."
+
+            git clone \
+              https://github.com/sidpatilaequm/Aset-Desk.git \
+              .
+
+          else
+            echo "Repository already exists"
+            git fetch origin
+            git reset --hard origin/main
+          fi
+
+          echo "Current commit:"
+          git rev-parse --short HEAD
+
+          echo "Repository deployment files:"
+          ls -la
+
+          echo "Backend:"
+          ls -la backend || true
+
+          echo "Database:"
+          ls -la database || true
+          REMOTE
 
           echo "========================================"
-          echo "Deployment stage reached successfully"
+          echo "Repository deployed successfully"
           echo "========================================"
