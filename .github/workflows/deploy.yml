@@ -43,7 +43,9 @@ jobs:
       - name: Wait for application
         run: |
           for i in {1..30}; do
-            if curl -fsS http://localhost:8000/ >/dev/null 2>&1; then
+            if docker compose exec -T app \
+                python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/', timeout=5); print('Application is ready')" \
+                >/dev/null 2>&1; then
               echo "Application is ready"
               exit 0
             fi
@@ -187,9 +189,7 @@ jobs:
           if [ ! -f backend/.env ]; then
 
             SECRET_KEY=$(openssl rand -hex 32)
-
             DB_PASSWORD=$(openssl rand -hex 24)
-
             DB_ROOT_PASSWORD=$(openssl rand -hex 24)
 
             cat > backend/.env <<EOF
@@ -242,6 +242,13 @@ jobs:
             exit 1
           fi
 
+          if [ -f .assetdesk-db.env ]; then
+            echo ".assetdesk-db.env exists"
+          else
+            echo "ERROR: .assetdesk-db.env was not created"
+            exit 1
+          fi
+
           echo "========================================"
           echo "Starting Asset Desk"
           echo "========================================"
@@ -259,17 +266,27 @@ jobs:
           docker compose ps
 
           echo "========================================"
-          echo "Waiting for Asset Desk"
+          echo "Checking Asset Desk application"
           echo "========================================"
 
           for i in $(seq 1 30); do
 
-            if curl -fsS http://127.0.0.1:8000/ >/dev/null 2>&1; then
-              echo "Asset Desk application is responding."
+            if docker compose exec -T app \
+                python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/', timeout=5); print('Asset Desk application is healthy')" \
+                >/dev/null 2>&1; then
+
+              echo "Asset Desk application is healthy."
               break
             fi
 
-            echo "Waiting for Asset Desk..."
+            if [ "$i" -eq 30 ]; then
+              echo "ERROR: Asset Desk application did not become healthy."
+              docker compose ps
+              docker compose logs --tail=100 app
+              exit 1
+            fi
+
+            echo "Waiting for Asset Desk application..."
             sleep 3
 
           done

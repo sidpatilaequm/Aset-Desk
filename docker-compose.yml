@@ -1,34 +1,53 @@
-# docker compose up -d   →  http://localhost:8000
 services:
   db:
     image: mysql:8.0
     restart: unless-stopped
+
     environment:
       MYSQL_DATABASE: assetdesk
       MYSQL_USER: assetdesk
       MYSQL_PASSWORD: ${DB_PASSWORD:-change-me}
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-change-me-too}
-    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_0900_ai_ci", "--default-time-zone=+00:00"]
+
+    command:
+      - "--character-set-server=utf8mb4"
+      - "--collation-server=utf8mb4_0900_ai_ci"
+      - "--default-time-zone=+00:00"
+
     volumes:
       - dbdata:/var/lib/mysql
       - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
+      test:
+        - CMD
+        - mysqladmin
+        - ping
+        - -h
+        - 127.0.0.1
       interval: 5s
       retries: 20
 
   app:
     build: .
     restart: unless-stopped
-    env_file: backend/.env
+
+    env_file:
+      - backend/.env
+
     environment:
       DATABASE_URL: mysql+pymysql://assetdesk:${DB_PASSWORD:-change-me}@db:3306/assetdesk?charset=utf8mb4
       UPLOAD_DIR: /data/uploads
+
     depends_on:
       db:
         condition: service_healthy
+
+    # Internal Docker port only.
+    # Do NOT use "ports: 8000:8000" because the VPS already uses port 8000.
     expose:
-        - "8000"
+      - "8000"
+
     volumes:
       - uploads:/data/uploads
 
